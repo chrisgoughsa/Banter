@@ -62,14 +62,6 @@ class BitgetETL:
         except Exception as e:
             logger.error(f"Failed to extract customer list for affiliate {affiliate_id}: {str(e)}")
     
-    def extract_account_info(self, affiliate_id: str) -> None:
-        """Extract and save account info data."""
-        try:
-            data = self.client.get_account_info(affiliate_id)
-            self._save_to_bronze(data, "account_info", affiliate_id)
-        except Exception as e:
-            logger.error(f"Failed to extract account info for affiliate {affiliate_id}: {str(e)}")
-    
     def extract_trade_activities(self, affiliate_id: str, client_id: str) -> None:
         """Extract and save trade activities data with pagination."""
         try:
@@ -136,7 +128,6 @@ class BitgetETL:
         
         # Extract affiliate-level data
         self.extract_customer_list(affiliate_id)
-        self.extract_account_info(affiliate_id)
         
         # Extract client-level data if client_id is provided
         if client_id:
