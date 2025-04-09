@@ -1,0 +1,35 @@
+crypto_data_platform:
+  target: dev
+  outputs:
+    dev:
+      type: postgres  # or snowflake, bigquery, redshift, etc.
+      host: localhost
+      port: 5432
+      user: your_username
+      password: your_password
+      dbname: crypto_data
+      schema: public
+      threads: 4
+      
+    # Example for Snowflake:
+    # dev:
+    #   type: snowflake
+    #   account: your_account
+    #   user: your_username
+    #   password: your_password
+    #   role: your_role
+    #   database: crypto_data
+    #   warehouse: your_warehouse
+    #   schema: public
+    #   threads: 4
+    #   client_session_keep_alive: False
+    #   query_tag: dbt
+
+    # Example for BigQuery:
+    # dev:
+    #   type: bigquery
+    #   method: service-account
+    #   project: your_project
+    #   dataset: crypto_data
+    #   threads: 4
+    #   keyfile: /path/to/your/service-account.json 
