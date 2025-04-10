@@ -19,21 +19,86 @@ git clone https://github.com/yourusername/crypto-data-platform.git
 cd crypto-data-platform
 ```
 
-2. Create and activate a virtual environment:
+2. Install Poetry if you haven't already:
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+curl -sSL https://install.python-poetry.org | python3 -
 ```
 
 3. Install dependencies:
 ```bash
-pip install -r requirements.txt
+poetry install
 ```
 
 4. Set up environment variables:
 ```bash
 cp .env.example .env
 # Edit .env with your configuration
+```
+
+## Local Development with Docker
+
+1. Build and start the containers:
+```bash
+docker-compose up --build
+```
+
+2. Access the application:
+- Web app: http://localhost:8000
+- Database: localhost:5432
+
+3. Run ETL processes:
+```bash
+docker-compose exec web poetry run python main.py etl --layer all
+```
+
+## Deployment to Heroku
+
+1. Install the Heroku CLI:
+```bash
+# macOS
+brew tap heroku/brew && brew install heroku
+
+# Windows
+choco install heroku-cli
+```
+
+2. Login to Heroku:
+```bash
+heroku login
+```
+
+3. Create a new Heroku app:
+```bash
+heroku create your-app-name
+```
+
+4. Add PostgreSQL addon:
+```bash
+heroku addons:create heroku-postgresql:hobby-dev
+```
+
+5. Set environment variables:
+```bash
+heroku config:set \
+  DB_HOST=$(heroku config:get DATABASE_URL | cut -d@ -f2 | cut -d/ -f1) \
+  DB_NAME=$(heroku config:get DATABASE_URL | cut -d/ -f4) \
+  DB_USER=$(heroku config:get DATABASE_URL | cut -d/ -f3 | cut -d: -f1) \
+  DB_PASSWORD=$(heroku config:get DATABASE_URL | cut -d/ -f3 | cut -d: -f2 | cut -d@ -f1)
+```
+
+6. Deploy to Heroku:
+```bash
+git push heroku main
+```
+
+7. Run database migrations:
+```bash
+heroku run poetry run python main.py reset
+```
+
+8. Run ETL process:
+```bash
+heroku run poetry run python main.py etl --layer all
 ```
 
 ## Usage
@@ -44,22 +109,22 @@ The platform provides several commands through the main script:
 
 Run the complete ETL pipeline:
 ```bash
-python main.py etl --layer all --days 7
+poetry run python main.py etl --layer all --days 7
 ```
 
 Run specific layers:
 ```bash
 # Extract data from Bitget API
-python main.py etl --layer bitget
+poetry run python main.py etl --layer bitget
 
 # Process bronze layer (raw data)
-python main.py etl --layer bronze --days 7
+poetry run python main.py etl --layer bronze --days 7
 
 # Transform to silver layer
-python main.py etl --layer silver
+poetry run python main.py etl --layer silver
 
 # Create gold layer views
-python main.py etl --layer gold
+poetry run python main.py etl --layer gold
 ```
 
 ### Dashboard
@@ -67,17 +132,17 @@ python main.py etl --layer gold
 Start the dashboard server:
 ```bash
 # Default host and port
-python main.py dashboard
+poetry run python main.py dashboard
 
 # Custom host and port
-python main.py dashboard --host 127.0.0.1 --port 8080
+poetry run python main.py dashboard --host 127.0.0.1 --port 8080
 ```
 
 ### Database Management
 
 Reset the database:
 ```bash
-python main.py reset
+poetry run python main.py reset
 ```
 
 ## Command Reference

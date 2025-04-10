@@ -15,7 +15,7 @@ import click
 from datetime import datetime
 from pathlib import Path
 
-from src.utils.db import get_db_connection, DatabaseError, create_db_connection
+from src.db import get_db_connection, DatabaseError, create_db_connection, reset_database
 from src.etl.bronze.extractors import (
     CustomerExtractor, DepositExtractor,
     TradeExtractor, AssetExtractor
@@ -235,18 +235,6 @@ def run_dashboard(host: str = "0.0.0.0", port: int = 8000) -> None:
         logger.error(f"Dashboard server failed: {e}")
         sys.exit(1)
 
-def reset_db() -> None:
-    """Reset the database using db_reset.py."""
-    logger.info("Resetting database...")
-    try:
-        # Import and run db_reset
-        from src.utils.db_reset import reset_database
-        reset_database()
-        logger.info("Database reset completed successfully")
-    except Exception as e:
-        logger.error(f"Database reset failed: {e}")
-        sys.exit(1)
-
 def main():
     """Main entry point with command line argument parsing."""
     parser = argparse.ArgumentParser(description='Crypto Data Platform')
@@ -309,7 +297,7 @@ def main():
     elif args.command == 'dashboard':
         run_dashboard(args.host, args.port)
     elif args.command == 'reset':
-        reset_db()
+        reset_database()
     else:
         parser.print_help()
         sys.exit(1)
