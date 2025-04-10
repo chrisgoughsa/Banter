@@ -20,6 +20,7 @@ class SilverTransformer:
     def __init__(self, conn: connection):
         self.conn = conn
         self.conn.autocommit = False  # Ensure we're using transactions
+        self.batch_size = ETL_CONFIG['batch_size']
 
     def create_table(self, query: str) -> None:
         """Create a table using the provided query."""

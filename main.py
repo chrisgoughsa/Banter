@@ -11,6 +11,9 @@ import uvicorn
 from typing import List, Optional
 from dotenv import load_dotenv
 from loguru import logger
+import click
+from datetime import datetime
+from pathlib import Path
 
 from src.utils.db import get_db_connection, DatabaseError, create_db_connection
 from src.etl.bronze.extractors import (
@@ -28,10 +31,11 @@ from src.etl.silver.transformers import (
     TradeTransformer
 )
 from src.etl.gold.views import GoldViewManager
-from src.config.settings import BRONZE_DIR
+from src.config.settings import BRONZE_DIR, ETL_CONFIG
 from src.dashboard.app.main import app as dashboard_app
 from src.etl.bitget_etl import BitgetETL
 from src.models.bitget_models import BitgetConfig
+from src.utils.logging_config import setup_logging
 
 # Configure logging
 logging.basicConfig(

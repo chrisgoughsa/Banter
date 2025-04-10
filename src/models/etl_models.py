@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, validator, root_validator
+from pydantic import BaseModel, Field, validator, model_validator
 
 class ETLConfig(BaseModel):
     """Configuration model for ETL pipeline."""
@@ -18,22 +18,22 @@ class ETLStatus(BaseModel):
     error_count: int = Field(ge=0)
     partial_count: int = Field(ge=0)
 
-    @root_validator
-    def validate_counts(cls, values):
-        total = values.get('total_records', 0)
-        success = values.get('success_count', 0)
-        error = values.get('error_count', 0)
-        partial = values.get('partial_count', 0)
+    @model_validator(mode='after')
+    def validate_counts(self) -> 'ETLStatus':
+        total = self.total_records
+        success = self.success_count
+        error = self.error_count
+        partial = self.partial_count
         
         if success + error + partial != total:
             raise ValueError("Sum of success, error, and partial counts must equal total records")
-        return values
+        return self
 
 class BronzeRecord(BaseModel):
     """Base model for bronze layer records."""
     source_file: str
     load_time: datetime
-    load_status: str = Field(regex='^(SUCCESS|ERROR|PARTIAL)$')
+    load_status: str = Field(pattern='^(SUCCESS|ERROR|PARTIAL)$')
 
 class CustomerRecord(BronzeRecord):
     """Model for customer data in bronze layer."""

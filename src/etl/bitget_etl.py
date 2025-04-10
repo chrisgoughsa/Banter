@@ -1,10 +1,10 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from loguru import logger
-from ..config.settings import config
+from ..config.settings import ETL_CONFIG
 from ..api.bitget_client import BitgetClient
 from ..models.etl_models import (
     ETLConfig,
@@ -90,10 +90,10 @@ class BitgetETL:
 
                     page_no += 1
 
-            except Exception as e:
-                logger.error(f"Failed to extract customer list for affiliate {affiliate_id}: {str(e)}")
-                raise
-    
+        except Exception as e:
+            logger.error(f"Failed to extract customer list for affiliate {affiliate_id}: {str(e)}")
+            raise
+
     def extract_trade_activities(
         self,
         affiliate_id: str,
@@ -138,18 +138,18 @@ class BitgetETL:
             # Full pagination
             current_batch = 1
             while True:
-            logger.info(
-                f"Fetching trade activities page {current_page} for affiliate {affiliate_id}, "
-                f"client={client_id or 'ALL'}, start={start_time}, end={end_time}"
-            )
-            records = self.client.get_trade_activities(
-                affiliate_id=affiliate_id,
-                client_id=client_id,
-                page_no=current_page,
-                page_size=effective_page_size,
-                start_time=start_time,
-                end_time=end_time
-            )
+                logger.info(
+                    f"Fetching trade activities page {current_page} for affiliate {affiliate_id}, "
+                    f"client={client_id or 'ALL'}, start={start_time}, end={end_time}"
+                )
+                records = self.client.get_trade_activities(
+                    affiliate_id=affiliate_id,
+                    client_id=client_id,
+                    page_no=current_page,
+                    page_size=effective_page_size,
+                    start_time=start_time,
+                    end_time=end_time
+                )
 
                 if not records:
                     logger.info(f"No trade activity records returned for batch {current_batch}")
