@@ -6,6 +6,19 @@ body {
 
 .navbar {
     box-shadow: 0 2px 4px rgba(0,0,0,.1);
+    padding: 0.5rem 1rem;
+}
+
+.navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.navbar-logo {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
 }
 
 .card {
