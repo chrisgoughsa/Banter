@@ -8,6 +8,45 @@ from loguru import logger
 from requests.exceptions import RequestException
 from ..models.bitget_models import BitgetConfig, APIResponse
 from ..models.etl_models import CustomerRecord, TradeRecord, DepositRecord, AssetRecord
+import threading
+
+class RateLimiter:
+    """Token bucket rate limiter implementation."""
+    
+    def __init__(self, rate: float, burst: int):
+        """
+        Initialize the rate limiter.
+        
+        Args:
+            rate: Number of tokens to add per second
+            burst: Maximum number of tokens that can be accumulated
+        """
+        self.rate = rate
+        self.burst = burst
+        self.tokens = burst
+        self.last_update = time.time()
+        self.lock = threading.Lock()
+        
+    def acquire(self) -> None:
+        """Acquire a token, waiting if necessary."""
+        with self.lock:
+            now = time.time()
+            # Add new tokens based on elapsed time
+            time_passed = now - self.last_update
+            new_tokens = time_passed * self.rate
+            self.tokens = min(self.burst, self.tokens + new_tokens)
+            self.last_update = now
+            
+            # Wait if no tokens available
+            while self.tokens < 1:
+                time.sleep(1 / self.rate)
+                now = time.time()
+                time_passed = now - self.last_update
+                new_tokens = time_passed * self.rate
+                self.tokens = min(self.burst, self.tokens + new_tokens)
+                self.last_update = now
+                
+            self.tokens -= 1
 
 class BitgetClient:
     """Client for interacting with the Bitget Broker API."""
@@ -31,6 +70,8 @@ class BitgetClient:
             }
             for aff in self.config.affiliates
         }
+        # Initialize rate limiter (10 requests per second)
+        self.rate_limiter = RateLimiter(rate=10.0, burst=10)
         
     def _get_timestamp(self) -> str:
         """Generate the required timestamp in milliseconds."""
@@ -94,6 +135,9 @@ class BitgetClient:
         """
         if affiliate_id not in self.affiliates:
             raise ValueError(f"Invalid affiliate ID: {affiliate_id}")
+            
+        # Apply rate limiting
+        self.rate_limiter.acquire()
             
         timestamp = self._get_timestamp()
         url = f"{self.base_url}{endpoint}"

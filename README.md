@@ -1,114 +1,166 @@
 # Crypto Data Platform
 
-A data platform for processing and analyzing cryptocurrency trading data across multiple affiliates.
+A comprehensive data platform for cryptocurrency trading analytics, built with Python and PostgreSQL.
 
-## Project Structure
+## Features
 
-```
-crypto_data_platform/
-├── src/                      # Source code
-│   ├── etl/                  # ETL processing logic
-│   │   ├── bronze/          # Raw data extraction and loading
-│   │   ├── silver/          # Data transformation and cleaning
-│   │   └── gold/            # Analytical views
-│   ├── config/              # Configuration management
-│   ├── utils/               # Shared utilities
-│   ├── dashboard/           # Dashboard application
-│   └── scripts/             # Utility scripts
-├── tests/                   # Test files
-├── data/                    # Data directory
-│   ├── bronze/             # Raw data files
-│   ├── silver/             # Transformed data
-│   └── gold/               # Analytical views
-├── alembic/                # Database migrations
-├── main.py                 # Main entry point
-├── pyproject.toml          # Project dependencies
-└── README.md               # This file
+- Multi-layer ETL pipeline (Bronze → Silver → Gold)
+- Bitget Broker API integration
+- Real-time dashboard
+- Comprehensive analytics
+- Data quality monitoring
+
+## Prerequisites
+
+- Python 3.8+
+- PostgreSQL 12+
+- Poetry (Python package manager)
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/crypto-data-platform.git
+cd crypto-data-platform
 ```
 
-## Quick Start
+2. Install dependencies:
+```bash
+poetry install
+```
 
-1. Install dependencies:
-   ```bash
-   poetry install
-   ```
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+Edit `.env` with your configuration:
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=crypto_data
+DB_USER=your_user
+DB_PASSWORD=your_password
 
-2. Set up the database:
-   ```bash
-   poetry run python src/scripts/clear_database.py  # If needed
-   ```
+# Bitget API Configuration
+BITGET_BASE_URL=https://api.bitget.com
+BITGET_AFFILIATE_IDS=affiliate1,affiliate2
 
-3. Run the ETL pipeline:
-   ```bash
-   # Run the complete pipeline
-   poetry run python main.py
+# For each affiliate, add their credentials:
+BITGET_AFFILIATE_affiliate1_NAME=Affiliate One
+BITGET_AFFILIATE_affiliate1_API_KEY=your_api_key
+BITGET_AFFILIATE_affiliate1_API_SECRET=your_api_secret
+BITGET_AFFILIATE_affiliate1_API_PASSPHRASE=your_passphrase
 
-   # Or run specific layers
-   poetry run python main.py --layer bronze --days 7
-   poetry run python main.py --layer silver
-   poetry run python main.py --layer gold
-   ```
+# Optional: Specific client IDs to process
+# BITGET_AFFILIATE_affiliate1_CLIENT_IDS=client1,client2
+```
 
-4. Start the dashboard:
-   ```bash
-   poetry run python src/dashboard/app/main.py
-   ```
+## Usage
 
-## ETL Pipeline
+### Running the ETL Pipeline
 
-The platform uses a three-layer ETL architecture:
+The platform provides a command-line interface for running different parts of the ETL pipeline:
 
-1. **Bronze Layer**: Raw data extraction and loading
-   - Extracts data from JSON files
-   - Performs basic validation
-   - Loads into bronze tables
+```bash
+# Run the complete ETL pipeline (all layers)
+python main.py etl --layer all
 
-2. **Silver Layer**: Data transformation and cleaning
-   - Cleans and standardizes data
-   - Enforces data quality rules
-   - Creates normalized tables with relationships
+# Run specific layers
+python main.py etl --layer bronze  # Raw data extraction
+python main.py etl --layer silver  # Data transformation
+python main.py etl --layer gold    # Analytics views
+python main.py etl --layer bitget  # Bitget API data extraction
 
-3. **Gold Layer**: Analytics and reporting
-   - Creates analytical views
-   - Calculates metrics and KPIs
-   - Powers the dashboard
+# Process specific time range
+python main.py etl --layer all --days 30  # Process last 30 days
+```
 
-## Command Line Interface
+### Starting the Dashboard
 
-The main entry point (`main.py`) supports the following arguments:
+```bash
+# Start the dashboard server
+python main.py dashboard
 
-- `--layer`: Specify which layer to process
-  - `bronze`: Process raw data only
-  - `silver`: Transform bronze to silver
-  - `gold`: Create analytical views
-  - `all`: Run complete pipeline (default)
+# Customize host and port
+python main.py dashboard --host 127.0.0.1 --port 8080
+```
 
-- `--days`: Number of days of data to process (default: 7)
+### ETL Pipeline Details
+
+1. **Bronze Layer**
+   - Extracts raw data from Bitget API
+   - Rate limited to 10 requests/second
+   - Stores data in JSON format
+   - Includes metadata and timestamps
+
+2. **Silver Layer**
+   - Transforms raw data into structured format
+   - Validates and cleans data
+   - Creates normalized tables
+   - Tracks data quality metrics
+
+3. **Gold Layer**
+   - Creates materialized views for analytics
+   - Provides aggregated metrics
+   - Optimizes query performance
+   - Supports concurrent refreshes
+
+### Data Types Processed
+
+- **Customer/Affiliate Data**
+  - Registration information
+  - Account status
+  - Country data
+
+- **Trade Activities**
+  - Trade volumes
+  - Symbol information
+  - Trade types (buy/sell)
+
+- **Deposits**
+  - Deposit amounts
+  - Coin types
+  - Transaction status
+
+- **Assets**
+  - Account balances
+  - Asset types
+  - Update timestamps
 
 ## Development
 
-1. Code Organization:
-   - Business logic in `src/etl/`
-   - Shared utilities in `src/utils/`
-   - Configuration in `src/config/`
-   - Dashboard in `src/dashboard/`
+### Project Structure
 
-2. Data Quality:
-   - Validation during extraction
-   - Quality checks during transformation
-   - Logging of quality metrics
+```
+.
+├── src/
+│   ├── api/           # API clients
+│   ├── config/        # Configuration
+│   ├── dashboard/     # Web dashboard
+│   ├── db/           # Database utilities
+│   ├── etl/          # ETL pipeline
+│   ├── models/       # Data models
+│   └── utils/        # Utility functions
+├── sql/              # SQL scripts
+├── tests/            # Test suite
+└── docs/             # Documentation
+```
 
-3. Error Handling:
-   - Comprehensive error catching
-   - Detailed logging
-   - Transaction management
+### Running Tests
 
-## Dashboard
+```bash
+poetry run pytest
+```
 
-The dashboard provides:
-- ETL process monitoring
-- Affiliate performance metrics
-- Trading volume analytics
-- Customer acquisition tracking
+## Contributing
 
-Access the dashboard at `http://localhost:8000` after starting the application. 
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
