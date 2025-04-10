@@ -19,8 +19,6 @@ pytz = "^2023.3"
 fastapi = "^0.109.0"
 uvicorn = "^0.27.0"
 pydantic = "^2.6.3"
-dbt = "^1.0.0.38.38"
-dbt-postgres = "^1.9.0"
 aiofiles = "^23.2.1"
 jinja2 = "^3.1.2"
 

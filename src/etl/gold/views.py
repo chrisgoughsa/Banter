@@ -159,11 +159,11 @@ class GoldViewManager:
                 trading_metrics AS (
                     SELECT 
                         c.affiliate_id,
-                        COUNT(DISTINCT t.id) as trades_30d,
+                        COUNT( t.client_id) as trades_30d,
                         COALESCE(SUM(t.trade_volume), 0) as trading_volume_30d,
                         CASE 
-                            WHEN COUNT(DISTINCT t.id) > 0 
-                            THEN COALESCE(SUM(t.trade_volume), 0) / COUNT(DISTINCT t.id)
+                            WHEN COUNT(t.client_id) > 0 
+                            THEN COALESCE(SUM(t.trade_volume), 0) / COUNT( t.client_id)
                             ELSE 0 
                         END as avg_trade_size
                     FROM clientaccount c

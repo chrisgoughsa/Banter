@@ -117,13 +117,6 @@ def run_bronze_etl(conn, days_back: int = 7) -> None:
         
         logger.info(f"Found {len(affiliate_ids)} affiliates to process")
         
-        # Create all tables first
-        logger.info("Creating bronze tables")
-        CustomerLoader(conn).create_customers_table()
-        DepositLoader(conn).create_deposits_table()
-        TradeLoader(conn).create_trades_table()
-        AssetLoader(conn).create_assets_table()
-        
         # Process each affiliate
         for affiliate_id in affiliate_ids:
             logger.info(f"Processing affiliate {affiliate_id}")
@@ -163,27 +156,20 @@ def run_silver_etl(conn) -> None:
     logger.info("Starting silver layer ETL process")
     
     try:
-        # Drop all dependent objects first
-        affiliate_transformer = AffiliateTransformer(conn)
-        affiliate_transformer.drop_dependent_objects()
-
         # Transform affiliate data first (required for foreign keys)
-        affiliate_transformer.create_affiliate_table()
+        affiliate_transformer = AffiliateTransformer(conn)
         affiliate_transformer.transform_affiliates()
 
         # Transform customer data
         customer_transformer = CustomerTransformer(conn)
-        customer_transformer.create_customer_table()
         customer_transformer.transform_customers()
 
         # Transform deposit data
         deposit_transformer = DepositTransformer(conn)
-        deposit_transformer.create_deposit_table()
         deposit_transformer.transform_deposits()
 
         # Transform trade data
         trade_transformer = TradeTransformer(conn)
-        trade_transformer.create_trade_table()
         trade_transformer.transform_trades()
         
         logger.info("Successfully completed silver layer ETL process")

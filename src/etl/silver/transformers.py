@@ -106,64 +106,9 @@ class SilverTransformer:
             logger.exception("Full traceback:")  # Add full traceback
             raise
 
-    def drop_dependent_objects(self):
-        """Drop all dependent objects before recreating tables."""
-        try:
-            # First drop all views
-            views = [
-                'gold_etl_affiliate_dashboard',
-                'gold_affiliate_daily_metrics',
-                'gold_affiliate_weekly_metrics',
-                'gold_affiliate_monthly_metrics',
-                'gold_affiliate_customer_funnel',
-                'gold_affiliate_performance_trend'
-            ]
-            
-            for view in views:
-                try:
-                    execute_query(self.conn, f"DROP VIEW IF EXISTS {view} CASCADE")
-                    logger.info(f"Dropped view {view}")
-                except DatabaseError as e:
-                    logger.warning(f"Failed to drop view {view}: {e}")
-            
-            # Then drop tables in correct order (respecting foreign key constraints)
-            tables = [
-                'tradeactivities',  # Has FK to clientaccount
-                'deposits',         # Has FK to clientaccount
-                'clientaccount',    # Has FK to affiliateaccount
-                'affiliateaccount'  # No dependencies
-            ]
-            
-            for table in tables:
-                try:
-                    execute_query(self.conn, f"DROP TABLE IF EXISTS {table} CASCADE")
-                    logger.info(f"Dropped table {table}")
-                except DatabaseError as e:
-                    logger.warning(f"Failed to drop table {table}: {e}")
-            
-            logger.info("Successfully dropped all dependent objects")
-            
-        except Exception as e:
-            logger.error(f"Error in drop_dependent_objects: {e}")
-            raise
-
 class AffiliateTransformer(SilverTransformer):
     """Transform affiliate data to silver layer."""
     
-    def create_affiliate_table(self):
-        """Create the silver affiliate table."""
-        query = """
-            DROP TABLE IF EXISTS affiliateaccount CASCADE;
-            CREATE TABLE affiliateaccount (
-                affiliate_id VARCHAR(50) PRIMARY KEY,
-                name VARCHAR(100),
-                email VARCHAR(255),
-                join_date DATE,
-                last_updated TIMESTAMP
-            )
-        """
-        self.create_table(query)
-
     def transform_affiliates(self):
         """Transform affiliate data from bronze to silver."""
         try:
@@ -185,7 +130,11 @@ class AffiliateTransformer(SilverTransformer):
                 WHERE affiliate_id IS NOT NULL
                 GROUP BY affiliate_id
                 ON CONFLICT (affiliate_id) DO UPDATE
-                SET last_updated = EXCLUDED.last_updated
+                SET 
+                    name = EXCLUDED.name,
+                    email = EXCLUDED.email,
+                    join_date = LEAST(affiliateaccount.join_date, EXCLUDED.join_date),
+                    last_updated = CURRENT_TIMESTAMP
             """
             self.transform_and_load(query, 'affiliateaccount')
         except Exception as e:
@@ -195,20 +144,6 @@ class AffiliateTransformer(SilverTransformer):
 class CustomerTransformer(SilverTransformer):
     """Transform customer data to silver layer."""
     
-    def create_customer_table(self):
-        """Create the silver customer table."""
-        query = """
-            DROP TABLE IF EXISTS clientaccount CASCADE;
-            CREATE TABLE clientaccount (
-                client_id VARCHAR(50) PRIMARY KEY,
-                affiliate_id VARCHAR(50),
-                register_time TIMESTAMP,
-                last_updated TIMESTAMP,
-                FOREIGN KEY (affiliate_id) REFERENCES affiliateaccount(affiliate_id)
-            )
-        """
-        self.create_table(query)
-
     def transform_customers(self):
         """Transform customer data from bronze to silver."""
         try:
@@ -228,7 +163,10 @@ class CustomerTransformer(SilverTransformer):
                 WHERE client_id IS NOT NULL AND affiliate_id IS NOT NULL
                 ORDER BY client_id, register_time DESC
                 ON CONFLICT (client_id) DO UPDATE
-                SET last_updated = EXCLUDED.last_updated
+                SET 
+                    affiliate_id = EXCLUDED.affiliate_id,
+                    register_time = LEAST(clientaccount.register_time, EXCLUDED.register_time),
+                    last_updated = CURRENT_TIMESTAMP
             """
             self.transform_and_load(query, 'clientaccount')
         except Exception as e:
@@ -238,22 +176,6 @@ class CustomerTransformer(SilverTransformer):
 class DepositTransformer(SilverTransformer):
     """Transform deposit data to silver layer."""
     
-    def create_deposit_table(self):
-        """Create the silver deposit table."""
-        query = """
-            DROP TABLE IF EXISTS deposits CASCADE;
-            CREATE TABLE deposits (
-                order_id VARCHAR(50) PRIMARY KEY,
-                client_id VARCHAR(50),
-                deposit_time TIMESTAMP,
-                deposit_coin VARCHAR(10),
-                deposit_amount DECIMAL(18,8),
-                last_updated TIMESTAMP,
-                FOREIGN KEY (client_id) REFERENCES clientaccount(client_id)
-            )
-        """
-        self.create_table(query)
-
     def transform_deposits(self):
         """Transform deposit data from bronze to silver."""
         try:
@@ -277,7 +199,12 @@ class DepositTransformer(SilverTransformer):
                 WHERE order_id IS NOT NULL AND client_id IS NOT NULL
                 ORDER BY order_id, deposit_time DESC
                 ON CONFLICT (order_id) DO UPDATE
-                SET last_updated = EXCLUDED.last_updated
+                SET 
+                    client_id = EXCLUDED.client_id,
+                    deposit_time = EXCLUDED.deposit_time,
+                    deposit_coin = EXCLUDED.deposit_coin,
+                    deposit_amount = EXCLUDED.deposit_amount,
+                    last_updated = CURRENT_TIMESTAMP
             """
             self.transform_and_load(query, 'deposits')
         except Exception as e:
@@ -287,21 +214,6 @@ class DepositTransformer(SilverTransformer):
 class TradeTransformer(SilverTransformer):
     """Transform trade data to silver layer."""
     
-    def create_trade_table(self):
-        """Create the silver trade table."""
-        query = """
-            DROP TABLE IF EXISTS tradeactivities CASCADE;
-            CREATE TABLE tradeactivities (
-                id SERIAL PRIMARY KEY,
-                client_id VARCHAR(50),
-                trade_time TIMESTAMP,
-                trade_volume DECIMAL(18,8),
-                last_updated TIMESTAMP,
-                FOREIGN KEY (client_id) REFERENCES clientaccount(client_id)
-            )
-        """
-        self.create_table(query)
-
     def transform_trades(self):
         """Transform trade data from bronze to silver."""
         try:
@@ -312,14 +224,18 @@ class TradeTransformer(SilverTransformer):
                     trade_volume,
                     last_updated
                 )
-                SELECT
+                SELECT DISTINCT ON (client_id, trade_time)
                     client_id,
                     trade_time,
                     trade_volume,
                     CURRENT_TIMESTAMP as last_updated
                 FROM bronze_trades
                 WHERE client_id IS NOT NULL
-                ORDER BY trade_time DESC
+                ORDER BY client_id, trade_time DESC
+                ON CONFLICT (client_id, trade_time) DO UPDATE
+                SET 
+                    trade_volume = EXCLUDED.trade_volume,
+                    last_updated = CURRENT_TIMESTAMP
             """
             self.transform_and_load(query, 'tradeactivities')
         except Exception as e:

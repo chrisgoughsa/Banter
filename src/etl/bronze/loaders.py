@@ -11,6 +11,7 @@ from psycopg2.extensions import connection
 from src.config.settings import ETL_CONFIG
 from src.utils.db import execute_batch, execute_query, DatabaseError
 from src.utils.data_quality import validate_data_quality, log_data_quality_metrics, create_data_quality_table
+from src.utils.db_setup import create_all_tables
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +21,8 @@ class BronzeLoader:
     def __init__(self, conn: connection):
         self.conn = conn
         create_data_quality_table(conn)
+        create_all_tables(conn)
         
-    def create_table(self, query: str) -> None:
-        """Create a table using the provided query."""
-        try:
-            execute_query(self.conn, query)
-            logger.info(f"Successfully created/updated table structure")
-        except DatabaseError as e:
-            logger.error(f"Failed to create/update table: {e}")
-            raise
-
     def load_data(self, data: List[Dict[str, Any]], table_name: str, columns: List[str]) -> None:
         """Load data into a table."""
         if not data:
@@ -48,6 +41,25 @@ class BronzeLoader:
             for issue in quality_metrics['issues']:
                 logger.warning(f"  - {issue}")
 
+        # Prepare SQL with NULL for non-raw fields
+        raw_columns = ['affiliate_id', 'client_id', 'register_time', 'deposit_time', 
+                      'trade_time', 'update_time', 'order_id', 'deposit_coin', 
+                      'deposit_amount', 'trade_volume', 'balance', 'remark']
+        
+        # Create a list of values for each record, using NULL for non-raw fields
+        current_time = datetime.now()
+        rows = []
+        for record in data:
+            row = []
+            for col in columns:
+                if col == 'load_time':
+                    row.append(current_time)
+                elif col in raw_columns and col in record:
+                    row.append(record[col])
+                else:
+                    row.append(None)
+            rows.append(row)
+        
         # Prepare SQL
         placeholders = ','.join(['%s'] * len(columns))
         insert_sql = f"""
@@ -55,9 +67,6 @@ class BronzeLoader:
             VALUES ({placeholders})
             ON CONFLICT DO NOTHING
         """
-
-        # Convert data to list of tuples for batch insert
-        rows = [[record[col] for col in columns] for record in data]
         
         try:
             # Load data in batches
@@ -74,100 +83,34 @@ class BronzeLoader:
 class CustomerLoader(BronzeLoader):
     """Load customer data into bronze layer."""
     
-    def create_customers_table(self):
-        """Create the bronze customers table."""
-        query = """
-            DROP TABLE IF EXISTS bronze_customers;
-            CREATE TABLE bronze_customers (
-                affiliate_id VARCHAR(50),
-                client_id VARCHAR(50),
-                register_time TIMESTAMP,
-                source_file TEXT,
-                load_time TIMESTAMP,
-                PRIMARY KEY (affiliate_id, client_id)
-            )
-        """
-        self.create_table(query)
-
     def load_customers(self, customers: List[Dict[str, Any]]):
         """Load customer data into bronze_customers table."""
-        columns = ['affiliate_id', 'client_id', 'register_time', 'source_file', 'load_time']
+        columns = ['affiliate_id', 'client_id', 'register_time', 'source_file', 'load_time', 'load_status']
         self.load_data(customers, 'bronze_customers', columns)
 
 class DepositLoader(BronzeLoader):
     """Load deposit data into bronze layer."""
     
-    def create_deposits_table(self):
-        """Create the bronze deposits table."""
-        query = """
-            DROP TABLE IF EXISTS bronze_deposits;
-            CREATE TABLE bronze_deposits (
-                affiliate_id VARCHAR(50),
-                client_id VARCHAR(50),
-                order_id VARCHAR(50),
-                deposit_time TIMESTAMP,
-                deposit_coin VARCHAR(10),
-                deposit_amount DECIMAL(18,8),
-                source_file TEXT,
-                load_time TIMESTAMP,
-                PRIMARY KEY (order_id)
-            )
-        """
-        self.create_table(query)
-
     def load_deposits(self, deposits: List[Dict[str, Any]]):
         """Load deposit data into bronze_deposits table."""
-        columns = ['affiliate_id', 'client_id', 'order_id', 'deposit_time', 
-                  'deposit_coin', 'deposit_amount', 'source_file', 'load_time']
+        columns = ['order_id', 'affiliate_id', 'client_id', 'deposit_time', 
+                  'deposit_coin', 'deposit_amount', 'source_file', 'load_time', 'load_status']
         self.load_data(deposits, 'bronze_deposits', columns)
 
 class TradeLoader(BronzeLoader):
     """Load trade data into bronze layer."""
     
-    def create_trades_table(self):
-        """Create the bronze trades table."""
-        query = """
-            DROP TABLE IF EXISTS bronze_trades;
-            CREATE TABLE bronze_trades (
-                affiliate_id VARCHAR(50),
-                client_id VARCHAR(50),
-                trade_volume DECIMAL(18,8),
-                trade_time TIMESTAMP,
-                source_file TEXT,
-                load_time TIMESTAMP,
-                id SERIAL PRIMARY KEY
-            )
-        """
-        self.create_table(query)
-
     def load_trades(self, trades: List[Dict[str, Any]]):
         """Load trade data into bronze_trades table."""
         columns = ['affiliate_id', 'client_id', 'trade_volume', 'trade_time', 
-                  'source_file', 'load_time']
+                  'source_file', 'load_time', 'load_status']
         self.load_data(trades, 'bronze_trades', columns)
 
 class AssetLoader(BronzeLoader):
     """Load asset data into bronze layer."""
     
-    def create_assets_table(self):
-        """Create the bronze assets table."""
-        query = """
-            DROP TABLE IF EXISTS bronze_assets;
-            CREATE TABLE bronze_assets (
-                affiliate_id VARCHAR(50),
-                client_id VARCHAR(50),
-                balance DECIMAL(18,8),
-                update_time TIMESTAMP,
-                remark TEXT,
-                source_file TEXT,
-                load_time TIMESTAMP,
-                id SERIAL PRIMARY KEY
-            )
-        """
-        self.create_table(query)
-
     def load_assets(self, assets: List[Dict[str, Any]]):
         """Load asset data into bronze_assets table."""
         columns = ['affiliate_id', 'client_id', 'balance', 'update_time', 
-                  'remark', 'source_file', 'load_time']
+                  'remark', 'source_file', 'load_time', 'load_status']
         self.load_data(assets, 'bronze_assets', columns) 
