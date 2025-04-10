@@ -6,6 +6,8 @@ from typing import Dict, Any, Optional, List
 import requests
 from loguru import logger
 from requests.exceptions import RequestException
+from ..models.bitget_models import BitgetConfig, APIResponse
+from ..models.etl_models import CustomerRecord, TradeRecord, DepositRecord, AssetRecord
 
 class BitgetClient:
     """Client for interacting with the Bitget Broker API."""
@@ -17,15 +19,17 @@ class BitgetClient:
         Args:
             config: Configuration dictionary containing affiliate credentials
         """
-        self.base_url = config['base_url'].rstrip('/')
+        # Validate config using Pydantic model
+        self.config = BitgetConfig(**config)
+        self.base_url = self.config.base_url.rstrip('/')
         self.affiliates = {
-            aff['id']: {
-                'name': aff['name'],
-                'api_key': aff['api_key'],
-                'api_secret': aff['api_secret'],
-                'api_passphrase': aff['api_passphrase']
+            aff.id: {
+                'name': aff.name,
+                'api_key': aff.api_key,
+                'api_secret': aff.api_secret,
+                'api_passphrase': aff.api_passphrase
             }
-            for aff in config['affiliates']
+            for aff in self.config.affiliates
         }
         
     def _get_timestamp(self) -> str:
@@ -71,7 +75,7 @@ class BitgetClient:
             'locale': 'en-US'
         }
     
-    def _make_request(self, affiliate_id: str, method: str, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _make_request(self, affiliate_id: str, method: str, endpoint: str, params: Optional[Dict[str, Any]] = None) -> APIResponse:
         """
         Make an authenticated request to the Bitget API.
         
@@ -82,10 +86,11 @@ class BitgetClient:
             params: Request parameters
             
         Returns:
-            API response as a dictionary
+            API response as a Pydantic model
             
         Raises:
             RequestException: If the API request fails
+            ValueError: If the response validation fails
         """
         if affiliate_id not in self.affiliates:
             raise ValueError(f"Invalid affiliate ID: {affiliate_id}")
@@ -115,7 +120,7 @@ class BitgetClient:
                 response = requests.post(url, headers=headers, json=params)
                 
             response.raise_for_status()
-            return response.json()
+            return APIResponse(**response.json())
             
         except RequestException as e:
             logger.error(f"API request failed for affiliate {affiliate_id}: {str(e)}")
@@ -123,7 +128,7 @@ class BitgetClient:
                 logger.error(f"Error response: {e.response.json()}")
             raise
     
-    def get_customer_list(self, affiliate_id: str, page_no: int = 1, page_size: int = 10) -> Dict[str, Any]:
+    def get_customer_list(self, affiliate_id: str, page_no: int = 1, page_size: int = 10) -> List[CustomerRecord]:
         """
         Get list of customers/affiliates.
         
@@ -133,7 +138,7 @@ class BitgetClient:
             page_size: Number of items per page
             
         Returns:
-            Customer list response
+            List of validated customer records
         """
         endpoint = '/api/broker/v1/agent/customerList'
         params = {
@@ -142,7 +147,11 @@ class BitgetClient:
         }
         
         logger.info(f"Fetching customer list for affiliate {affiliate_id} (page {page_no}, size {page_size})")
-        return self._make_request(affiliate_id, "POST", endpoint, params)
+        response = self._make_request(affiliate_id, "POST", endpoint, params)
+        
+        if response.data:
+            return [CustomerRecord(**record) for record in response.data]
+        return []
     
     def get_account_info(self, affiliate_id: str) -> Dict[str, Any]:
         """
@@ -158,7 +167,7 @@ class BitgetClient:
         logger.info(f"Fetching account information for affiliate {affiliate_id}")
         return self._make_request(affiliate_id, "GET", endpoint)
     
-    def get_trade_activities(self, affiliate_id: str, client_id: str) -> Dict[str, Any]:
+    def get_trade_activities(self, affiliate_id: str, client_id: str) -> List[TradeRecord]:
         """
         Get trade activities for a client.
         
@@ -167,16 +176,20 @@ class BitgetClient:
             client_id: ID of the client
             
         Returns:
-            Trade activities response
+            List of validated trade records
         """
         endpoint = '/api/broker/v1/agent/tradeList'
         params = {
             "clientId": client_id
         }
         logger.info(f"Fetching trade activities for client {client_id} under affiliate {affiliate_id}")
-        return self._make_request(affiliate_id, "POST", endpoint, params)
+        response = self._make_request(affiliate_id, "POST", endpoint, params)
+        
+        if response.data:
+            return [TradeRecord(**record) for record in response.data]
+        return []
     
-    def get_deposits(self, affiliate_id: str, client_id: str) -> Dict[str, Any]:
+    def get_deposits(self, affiliate_id: str, client_id: str) -> List[DepositRecord]:
         """
         Get deposit history for a client.
         
@@ -185,16 +198,20 @@ class BitgetClient:
             client_id: ID of the client
             
         Returns:
-            Deposit history response
+            List of validated deposit records
         """
         endpoint = '/api/broker/v1/agent/depositList'
         params = {
             "clientId": client_id
         }
         logger.info(f"Fetching deposits for client {client_id} under affiliate {affiliate_id}")
-        return self._make_request(affiliate_id, "POST", endpoint, params)
+        response = self._make_request(affiliate_id, "POST", endpoint, params)
+        
+        if response.data:
+            return [DepositRecord(**record) for record in response.data]
+        return []
     
-    def get_assets(self, affiliate_id: str, client_id: str) -> Dict[str, Any]:
+    def get_assets(self, affiliate_id: str, client_id: str) -> List[AssetRecord]:
         """
         Get asset information for a client.
         
@@ -203,12 +220,16 @@ class BitgetClient:
             client_id: ID of the client
             
         Returns:
-            Asset information response
+            List of validated asset records
         """
         endpoint = '/api/broker/v1/agent/assetList'
         params = {
             "clientId": client_id
         }
         logger.info(f"Fetching assets for client {client_id} under affiliate {affiliate_id}")
-        return self._make_request(affiliate_id, "POST", endpoint, params)
+        response = self._make_request(affiliate_id, "POST", endpoint, params)
+        
+        if response.data:
+            return [AssetRecord(**record) for record in response.data]
+        return []
     

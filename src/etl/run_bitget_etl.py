@@ -1,11 +1,11 @@
 import os
-import json
 from dotenv import load_dotenv
 from loguru import logger
 from etl.bitget_etl import BitgetETL
+from models.bitget_models import BitgetConfig
 
-def load_config() -> dict:
-    """Load configuration from environment variables."""
+def load_config() -> BitgetConfig:
+    """Load and validate configuration from environment variables."""
     load_dotenv()
     
     config = {
@@ -27,20 +27,21 @@ def load_config() -> dict:
             'api_passphrase': os.getenv(f'BITGET_AFFILIATE_{aff_id}_API_PASSPHRASE')
         })
     
-    return config
+    # Validate config using Pydantic model
+    return BitgetConfig(**config)
 
 def main():
     """Run the Bitget ETL pipeline for all affiliates."""
     try:
-        # Load configuration
+        # Load and validate configuration
         config = load_config()
         
         # Initialize ETL
-        etl = BitgetETL(config)
+        etl = BitgetETL(config.dict())
         
         # Run ETL for each affiliate
-        for affiliate in config['affiliates']:
-            affiliate_id = affiliate['id']
+        for affiliate in config.affiliates:
+            affiliate_id = affiliate.id
             logger.info(f"Processing affiliate: {affiliate_id}")
             
             # Run ETL for affiliate-level data

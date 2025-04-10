@@ -5,6 +5,14 @@ from pathlib import Path
 from typing import Dict, Any, List
 from loguru import logger
 from ..api.bitget_client import BitgetClient
+from ..models.etl_models import (
+    ETLConfig,
+    CustomerRecord,
+    TradeRecord,
+    DepositRecord,
+    AssetRecord,
+    BronzeRecord
+)
 
 class BitgetETL:
     """ETL pipeline for Bitget API data."""
@@ -19,13 +27,14 @@ class BitgetETL:
         self.client = BitgetClient(config)
         self.base_path = Path("data/bronze")
         self.timestamp = datetime.now()
+        self.etl_config = ETLConfig()
         
-    def _save_to_bronze(self, data: Dict[str, Any], endpoint: str, affiliate_id: str, page: int = 1) -> None:
+    def _save_to_bronze(self, records: List[BronzeRecord], endpoint: str, affiliate_id: str, page: int = 1) -> None:
         """
-        Save raw API response to bronze layer with date-based organization and pagination.
+        Save validated records to bronze layer with date-based organization and pagination.
         
         Args:
-            data: API response data
+            records: List of validated records
             endpoint: API endpoint name
             affiliate_id: ID of the affiliate
             page: Page number for paginated responses
@@ -34,6 +43,18 @@ class BitgetETL:
         date_path = self.timestamp.strftime("%Y/%m/%d")
         save_path = self.base_path / affiliate_id / endpoint / date_path
         save_path.mkdir(parents=True, exist_ok=True)
+        
+        # Convert records to dict and add metadata
+        data = {
+            "records": [record.dict() for record in records],
+            "metadata": {
+                "affiliate_id": affiliate_id,
+                "endpoint": endpoint,
+                "page": page,
+                "timestamp": self.timestamp.isoformat(),
+                "total_records": len(records)
+            }
+        }
         
         # Save file with page number
         filename = f"page_{page}.json"
@@ -48,73 +69,89 @@ class BitgetETL:
         """Extract and save customer list data with pagination."""
         try:
             page_no = 1
-            page_size = 100  # Adjust based on API limits
             has_more = True
             
             while has_more:
-                data = self.client.get_customer_list(affiliate_id, page_no=page_no, page_size=page_size)
-                self._save_to_bronze(data, "customer_list", affiliate_id, page_no)
+                records = self.client.get_customer_list(
+                    affiliate_id,
+                    page_no=page_no,
+                    page_size=self.etl_config.batch_size
+                )
                 
-                # Check if there are more pages
-                has_more = data.get('hasMore', False)
+                if records:
+                    self._save_to_bronze(records, "customer_list", affiliate_id, page_no)
+                    has_more = len(records) == self.etl_config.batch_size
+                else:
+                    has_more = False
+                    
                 page_no += 1
                 
         except Exception as e:
             logger.error(f"Failed to extract customer list for affiliate {affiliate_id}: {str(e)}")
+            raise
     
     def extract_trade_activities(self, affiliate_id: str, client_id: str) -> None:
         """Extract and save trade activities data with pagination."""
         try:
             page_no = 1
-            page_size = 100  # Adjust based on API limits
             has_more = True
             
             while has_more:
-                data = self.client.get_trade_activities(affiliate_id, client_id)
-                self._save_to_bronze(data, "trade_activities", affiliate_id, page_no)
+                records = self.client.get_trade_activities(affiliate_id, client_id)
                 
-                # Check if there are more pages
-                has_more = data.get('hasMore', False)
+                if records:
+                    self._save_to_bronze(records, "trade_activities", affiliate_id, page_no)
+                    has_more = len(records) == self.etl_config.batch_size
+                else:
+                    has_more = False
+                    
                 page_no += 1
                 
         except Exception as e:
             logger.error(f"Failed to extract trade activities for affiliate {affiliate_id}: {str(e)}")
+            raise
     
     def extract_deposits(self, affiliate_id: str, client_id: str) -> None:
         """Extract and save deposits data with pagination."""
         try:
             page_no = 1
-            page_size = 100  # Adjust based on API limits
             has_more = True
             
             while has_more:
-                data = self.client.get_deposits(affiliate_id, client_id)
-                self._save_to_bronze(data, "deposits", affiliate_id, page_no)
+                records = self.client.get_deposits(affiliate_id, client_id)
                 
-                # Check if there are more pages
-                has_more = data.get('hasMore', False)
+                if records:
+                    self._save_to_bronze(records, "deposits", affiliate_id, page_no)
+                    has_more = len(records) == self.etl_config.batch_size
+                else:
+                    has_more = False
+                    
                 page_no += 1
                 
         except Exception as e:
             logger.error(f"Failed to extract deposits for affiliate {affiliate_id}: {str(e)}")
+            raise
     
     def extract_assets(self, affiliate_id: str, client_id: str) -> None:
         """Extract and save assets data with pagination."""
         try:
             page_no = 1
-            page_size = 100  # Adjust based on API limits
             has_more = True
             
             while has_more:
-                data = self.client.get_assets(affiliate_id, client_id)
-                self._save_to_bronze(data, "assets", affiliate_id, page_no)
+                records = self.client.get_assets(affiliate_id, client_id)
                 
-                # Check if there are more pages
-                has_more = data.get('hasMore', False)
+                if records:
+                    self._save_to_bronze(records, "assets", affiliate_id, page_no)
+                    has_more = len(records) == self.etl_config.batch_size
+                else:
+                    has_more = False
+                    
                 page_no += 1
                 
         except Exception as e:
             logger.error(f"Failed to extract assets for affiliate {affiliate_id}: {str(e)}")
+            raise
     
     def run_etl(self, affiliate_id: str, client_id: str = None) -> None:
         """
