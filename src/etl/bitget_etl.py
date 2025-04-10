@@ -138,6 +138,7 @@ class BitgetETL:
             # Full pagination
             current_batch = 1
             while True:
+
                 logger.info(
                     f"Fetching trade activities page {current_page} for affiliate {affiliate_id}, "
                     f"client={client_id or 'ALL'}, start={start_time}, end={end_time}"
