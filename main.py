@@ -6,8 +6,11 @@ This script can run the ETL pipeline and/or start the dashboard server.
 import argparse
 import logging
 import sys
+import os
 import uvicorn
 from typing import List, Optional
+from dotenv import load_dotenv
+from loguru import logger
 
 from src.utils.db import get_db_connection, DatabaseError, create_db_connection
 from src.etl.bronze.extractors import (
@@ -27,6 +30,8 @@ from src.etl.silver.transformers import (
 from src.etl.gold.views import GoldViewManager
 from src.config.settings import BRONZE_DIR
 from src.dashboard.app.main import app as dashboard_app
+from src.etl.bitget_etl import BitgetETL
+from src.models.bitget_models import BitgetConfig
 
 # Configure logging
 logging.basicConfig(
@@ -42,6 +47,59 @@ def get_affiliate_ids() -> List[str]:
     affiliate_ids = [d.name.replace('affiliate', '') for d in affiliate_dirs]
     return sorted(affiliate_ids, key=lambda x: int(x))
 
+def load_bitget_config() -> BitgetConfig:
+    """Load and validate Bitget configuration from environment variables."""
+    load_dotenv()
+    
+    config = {
+        'base_url': os.getenv('BITGET_BASE_URL'),
+        'affiliates': []
+    }
+    
+    # Load affiliate configurations
+    affiliate_ids = os.getenv('BITGET_AFFILIATE_IDS', '').split(',')
+    for aff_id in affiliate_ids:
+        if not aff_id.strip():
+            continue
+            
+        config['affiliates'].append({
+            'id': aff_id.strip(),
+            'name': os.getenv(f'BITGET_AFFILIATE_{aff_id}_NAME'),
+            'api_key': os.getenv(f'BITGET_AFFILIATE_{aff_id}_API_KEY'),
+            'api_secret': os.getenv(f'BITGET_AFFILIATE_{aff_id}_API_SECRET'),
+            'api_passphrase': os.getenv(f'BITGET_AFFILIATE_{aff_id}_API_PASSPHRASE')
+        })
+    
+    # Validate config using Pydantic model
+    return BitgetConfig(**config)
+
+def run_bitget_etl() -> None:
+    """Run the Bitget ETL pipeline for all affiliates."""
+    try:
+        # Load and validate configuration
+        config = load_bitget_config()
+        
+        # Initialize ETL
+        etl = BitgetETL(config.dict())
+        
+        # Run ETL for each affiliate
+        for affiliate in config.affiliates:
+            affiliate_id = affiliate.id
+            logger.info(f"Processing Bitget affiliate: {affiliate_id}")
+            
+            # Run ETL for affiliate-level data
+            etl.run_etl(affiliate_id)
+            
+            # Optionally, run ETL for specific clients
+            # client_ids = os.getenv(f'BITGET_AFFILIATE_{affiliate_id}_CLIENT_IDS', '').split(',')
+            # for client_id in client_ids:
+            #     if client_id.strip():
+            #         etl.run_etl(affiliate_id, client_id.strip())
+                
+    except Exception as e:
+        logger.error(f"Bitget ETL pipeline failed: {str(e)}")
+        raise
+        
 def run_bronze_etl(conn, days_back: int = 7) -> None:
     """Run the bronze layer ETL process."""
     logger.info("Starting bronze layer ETL process")
@@ -198,7 +256,7 @@ def main():
     etl_parser = subparsers.add_parser('etl', help='Run ETL pipeline')
     etl_parser.add_argument(
         '--layer',
-        choices=['bronze', 'silver', 'gold', 'all'],
+        choices=['bronze', 'silver', 'gold', 'all', 'bitget'],
         default='all',
         help='Specify which layer to process (default: all)'
     )
@@ -228,15 +286,18 @@ def main():
     
     if args.command == 'etl':
         try:
-            with get_db_connection() as conn:
-                if args.layer == 'bronze':
-                    run_bronze_etl(conn, args.days)
-                elif args.layer == 'silver':
-                    run_silver_etl(conn)
-                elif args.layer == 'gold':
-                    run_gold_etl(conn)
-                else:  # 'all'
-                    run_full_pipeline(args.days)
+            if args.layer == 'bitget':
+                run_bitget_etl()
+            else:
+                with get_db_connection() as conn:
+                    if args.layer == 'bronze':
+                        run_bronze_etl(conn, args.days)
+                    elif args.layer == 'silver':
+                        run_silver_etl(conn)
+                    elif args.layer == 'gold':
+                        run_gold_etl(conn)
+                    else:  # 'all'
+                        run_full_pipeline(args.days)
         except Exception as e:
             logger.error(f"Pipeline execution failed: {e}")
             sys.exit(1)

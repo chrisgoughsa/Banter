@@ -128,12 +128,14 @@ class BitgetClient:
                 logger.error(f"Error response: {e.response.json()}")
             raise
     
-    def get_customer_list(self, affiliate_id: str, page_no: int = 1, page_size: int = 10) -> List[CustomerRecord]:
+    def get_customer_list(self, affiliate_id: str, start_time: Optional[int] = None, end_time: Optional[int] = None, page_no: int = 1, page_size: int = 10) -> List[CustomerRecord]:
         """
         Get list of customers/affiliates.
         
         Args:
             affiliate_id: ID of the affiliate making the request
+            start_time: Start time for filtering customers
+            end_time: End time for filtering customers
             page_no: Page number for pagination
             page_size: Number of items per page
             
@@ -143,7 +145,9 @@ class BitgetClient:
         endpoint = '/api/broker/v1/agent/customerList'
         params = {
             "pageNo": str(page_no),
-            "pageSize": str(page_size)
+            "pageSize": str(page_size),
+            "startTime": start_time,
+            "endTime": end_time
         }
         
         logger.info(f"Fetching customer list for affiliate {affiliate_id} (page {page_no}, size {page_size})")
@@ -153,21 +157,7 @@ class BitgetClient:
             return [CustomerRecord(**record) for record in response.data]
         return []
     
-    def get_account_info(self, affiliate_id: str) -> Dict[str, Any]:
-        """
-        Get account information.
-        
-        Args:
-            affiliate_id: ID of the affiliate making the request
-            
-        Returns:
-            Account information response
-        """
-        endpoint = '/api/broker/v1/account/info'
-        logger.info(f"Fetching account information for affiliate {affiliate_id}")
-        return self._make_request(affiliate_id, "GET", endpoint)
-    
-    def get_trade_activities(self, affiliate_id: str, client_id: str) -> List[TradeRecord]:
+    def get_trade_activities(self, affiliate_id: str, client_id: str, start_time: Optional[int] = None, end_time: Optional[int] = None, page_no: int = 1, page_size: int = 100) -> List[TradeRecord]:
         """
         Get trade activities for a client.
         
@@ -178,9 +168,13 @@ class BitgetClient:
         Returns:
             List of validated trade records
         """
-        endpoint = '/api/broker/v1/agent/tradeList'
+        endpoint = '/api/broker/v1/agent/customerTradeVolumnList'
         params = {
-            "clientId": client_id
+            "clientId": client_id,
+            "startTime": start_time,
+            "endTime": end_time,
+            "pageNo": page_no,
+            "pageSize": page_size
         }
         logger.info(f"Fetching trade activities for client {client_id} under affiliate {affiliate_id}")
         response = self._make_request(affiliate_id, "POST", endpoint, params)
@@ -189,20 +183,28 @@ class BitgetClient:
             return [TradeRecord(**record) for record in response.data]
         return []
     
-    def get_deposits(self, affiliate_id: str, client_id: str) -> List[DepositRecord]:
+    def get_deposits(self, affiliate_id: str, client_id: str, start_time: Optional[int] = None, end_time: Optional[int] = None, page_no: int = 1, page_size: int = 100) -> List[DepositRecord]:
         """
         Get deposit history for a client.
         
         Args:
             affiliate_id: ID of the affiliate making the request
             client_id: ID of the client
+            start_time: Start time for filtering deposits
+            end_time: End time for filtering deposits
+            page_no: Page number for pagination
+            page_size: Number of items per page
             
         Returns:
             List of validated deposit records
         """
-        endpoint = '/api/broker/v1/agent/depositList'
+        endpoint = '/api/broker/v1/agent/DepositList'
         params = {
-            "clientId": client_id
+            "clientId": client_id,
+            "startTime": start_time,
+            "endTime": end_time,
+            "pageNo": page_no,
+            "pageSize": page_size
         }
         logger.info(f"Fetching deposits for client {client_id} under affiliate {affiliate_id}")
         response = self._make_request(affiliate_id, "POST", endpoint, params)
@@ -211,20 +213,24 @@ class BitgetClient:
             return [DepositRecord(**record) for record in response.data]
         return []
     
-    def get_assets(self, affiliate_id: str, client_id: str) -> List[AssetRecord]:
+    def get_assets(self, affiliate_id: str, client_id: str,page_no: int = 1, page_size: int = 100) -> List[AssetRecord]:
         """
         Get asset information for a client.
         
         Args:
             affiliate_id: ID of the affiliate making the request
             client_id: ID of the client
+            page_no: Page number for pagination
+            page_size: Number of items per page
             
         Returns:
             List of validated asset records
         """
-        endpoint = '/api/broker/v1/agent/assetList'
+        endpoint = '/api/broker/v1/agent/AccounAssetsList'
         params = {
-            "clientId": client_id
+            "clientId": client_id,
+            "pageNo": page_no,
+            "pageSize": page_size
         }
         logger.info(f"Fetching assets for client {client_id} under affiliate {affiliate_id}")
         response = self._make_request(affiliate_id, "POST", endpoint, params)
