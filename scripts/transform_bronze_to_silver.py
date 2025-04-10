@@ -16,140 +16,95 @@ DB_PARAMS = {
 }
 
 def create_silver_tables(conn):
-    """Create silver layer tables with proper data types and constraints"""
+    """Create silver layer tables matching the existing schema"""
     with conn.cursor() as cur:
-        # Create silver customers table with standardized fields
+        # Create AffiliateAccount table
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS silver_customers (
-                customer_id VARCHAR(50) PRIMARY KEY,
-                affiliate_id VARCHAR(50) NOT NULL,
-                email VARCHAR(255),
-                first_name VARCHAR(100),
-                last_name VARCHAR(100),
-                country VARCHAR(100),
-                registration_date TIMESTAMP,
-                last_activity_date TIMESTAMP,
-                status VARCHAR(50),
-                raw_data JSONB,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            CREATE TABLE IF NOT EXISTS AffiliateAccount (
+                affiliate_id STRING PRIMARY KEY,
+                name STRING,
+                email STRING,
+                join_date TIMESTAMP,
+                metadata JSON
             )
         """)
         
-        # Create silver assets table
+        # Create ClientAccount table
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS silver_assets (
-                asset_id VARCHAR(50) PRIMARY KEY,
-                symbol VARCHAR(50) NOT NULL,
-                name VARCHAR(100),
-                type VARCHAR(50),
-                status VARCHAR(50),
-                raw_data JSONB,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            CREATE TABLE IF NOT EXISTS ClientAccount (
+                client_id STRING PRIMARY KEY,
+                affiliate_id STRING,
+                register_time TIMESTAMP,
+                country STRING,
+                metadata JSON,
+                FOREIGN KEY (affiliate_id) REFERENCES AffiliateAccount(affiliate_id)
             )
         """)
         
-        # Create silver deposits table with standardized fields
+        # Create Deposits table
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS silver_deposits (
-                deposit_id VARCHAR(50) PRIMARY KEY,
-                customer_id VARCHAR(50) REFERENCES silver_customers(customer_id),
-                affiliate_id VARCHAR(50) NOT NULL,
-                asset_id VARCHAR(50) REFERENCES silver_assets(asset_id),
-                amount DECIMAL(20,8),
-                status VARCHAR(50),
-                deposit_date TIMESTAMP,
-                processed_date TIMESTAMP,
-                raw_data JSONB,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            CREATE TABLE IF NOT EXISTS Deposits (
+                deposit_id STRING PRIMARY KEY,
+                client_id STRING,
+                deposit_time TIMESTAMP,
+                deposit_coin STRING,
+                deposit_amount FLOAT64,
+                FOREIGN KEY (client_id) REFERENCES ClientAccount(client_id)
             )
         """)
         
-        # Create silver trades table with standardized fields
+        # Create TradeActivities table
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS silver_trades (
-                trade_id VARCHAR(50) PRIMARY KEY,
-                customer_id VARCHAR(50) REFERENCES silver_customers(customer_id),
-                affiliate_id VARCHAR(50) NOT NULL,
-                base_asset_id VARCHAR(50) REFERENCES silver_assets(asset_id),
-                quote_asset_id VARCHAR(50) REFERENCES silver_assets(asset_id),
-                side VARCHAR(10),
-                price DECIMAL(20,8),
-                quantity DECIMAL(20,8),
-                total_value DECIMAL(20,8),
-                trade_date TIMESTAMP,
-                status VARCHAR(50),
-                raw_data JSONB,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            CREATE TABLE IF NOT EXISTS TradeActivities (
+                trade_activity_id STRING PRIMARY KEY,
+                client_id STRING,
+                trade_time TIMESTAMP,
+                symbol STRING,
+                trade_volume FLOAT64,
+                FOREIGN KEY (client_id) REFERENCES ClientAccount(client_id)
             )
         """)
         
-        # Create aggregated views
+        # Create Assets table
         cur.execute("""
-            CREATE OR REPLACE VIEW silver_daily_trades AS
-            SELECT 
-                DATE_TRUNC('day', trade_date) as date,
-                customer_id,
-                affiliate_id,
-                base_asset_id,
-                quote_asset_id,
-                COUNT(*) as trade_count,
-                SUM(quantity) as total_quantity,
-                SUM(total_value) as total_value,
-                AVG(price) as avg_price
-            FROM silver_trades
-            GROUP BY 
-                DATE_TRUNC('day', trade_date),
-                customer_id,
-                affiliate_id,
-                base_asset_id,
-                quote_asset_id
+            CREATE TABLE IF NOT EXISTS Assets (
+                asset_id STRING PRIMARY KEY,
+                client_id STRING,
+                balance FLOAT64,
+                last_update_time TIMESTAMP,
+                remark STRING,
+                FOREIGN KEY (client_id) REFERENCES ClientAccount(client_id)
+            )
         """)
         
-        cur.execute("""
-            CREATE OR REPLACE VIEW silver_weekly_trades AS
-            SELECT 
-                DATE_TRUNC('week', trade_date) as week,
-                customer_id,
+    conn.commit()
+
+def process_affiliates(conn, bronze_dir):
+    """Process affiliate data from directory structure"""
+    with conn.cursor() as cur:
+        # Get all affiliate directories
+        for affiliate_dir in os.listdir(bronze_dir):
+            if not affiliate_dir.startswith('affiliate'):
+                continue
+                
+            affiliate_id = affiliate_dir
+            # Create a basic affiliate record
+            cur.execute("""
+                INSERT INTO AffiliateAccount (
+                    affiliate_id, name, email, join_date, metadata
+                ) VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (affiliate_id) DO UPDATE
+                SET name = EXCLUDED.name,
+                    email = EXCLUDED.email,
+                    join_date = EXCLUDED.join_date,
+                    metadata = EXCLUDED.metadata
+            """, (
                 affiliate_id,
-                base_asset_id,
-                quote_asset_id,
-                COUNT(*) as trade_count,
-                SUM(quantity) as total_quantity,
-                SUM(total_value) as total_value,
-                AVG(price) as avg_price
-            FROM silver_trades
-            GROUP BY 
-                DATE_TRUNC('week', trade_date),
-                customer_id,
-                affiliate_id,
-                base_asset_id,
-                quote_asset_id
-        """)
-        
-        cur.execute("""
-            CREATE OR REPLACE VIEW silver_monthly_trades AS
-            SELECT 
-                DATE_TRUNC('month', trade_date) as month,
-                customer_id,
-                affiliate_id,
-                base_asset_id,
-                quote_asset_id,
-                COUNT(*) as trade_count,
-                SUM(quantity) as total_quantity,
-                SUM(total_value) as total_value,
-                AVG(price) as avg_price
-            FROM silver_trades
-            GROUP BY 
-                DATE_TRUNC('month', trade_date),
-                customer_id,
-                affiliate_id,
-                base_asset_id,
-                quote_asset_id
-        """)
+                f"Affiliate {affiliate_id}",
+                f"{affiliate_id}@example.com",
+                datetime.now(),
+                json.dumps({"source": "directory_structure"})
+            ))
         
     conn.commit()
 
@@ -159,7 +114,6 @@ def standardize_date(date_str: str) -> datetime:
         return None
         
     try:
-        # Try common date formats
         formats = [
             '%Y-%m-%dT%H:%M:%S.%fZ',
             '%Y-%m-%dT%H:%M:%SZ',
@@ -179,221 +133,169 @@ def standardize_date(date_str: str) -> datetime:
     except:
         return None
 
-def clean_customer_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Clean and standardize customer data"""
+def clean_affiliate_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Clean and standardize affiliate data"""
     cleaned = {
-        'customer_id': data.get('id'),
-        'affiliate_id': data.get('affiliate_id'),
+        'affiliate_id': data.get('id'),
+        'name': data.get('name', '').strip(),
         'email': data.get('email', '').lower().strip(),
-        'first_name': data.get('first_name', '').strip(),
-        'last_name': data.get('last_name', '').strip(),
-        'country': data.get('country', '').strip(),
-        'registration_date': standardize_date(data.get('registration_date')),
-        'last_activity_date': standardize_date(data.get('last_activity_date')),
-        'status': data.get('status', 'active').lower(),
-        'raw_data': json.dumps(data)
+        'join_date': standardize_date(data.get('join_date')),
+        'metadata': json.dumps(data)
     }
     
-    # Handle missing values
-    for key in ['email', 'first_name', 'last_name', 'country']:
-        if not cleaned[key]:
-            cleaned[key] = None
-            
     return cleaned
 
-def clean_asset_data(data: Dict[str, Any]) -> Dict[str, Any]:
-    """Clean and standardize asset data"""
+def clean_client_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Clean and standardize client data"""
     cleaned = {
-        'asset_id': data.get('id'),
-        'symbol': data.get('symbol', '').upper().strip(),
-        'name': data.get('name', '').strip(),
-        'type': data.get('type', 'crypto').lower(),
-        'status': data.get('status', 'active').lower(),
-        'raw_data': json.dumps(data)
+        'client_id': data.get('id'),
+        'affiliate_id': data.get('affiliate_id'),
+        'register_time': standardize_date(data.get('register_time')),
+        'country': data.get('country', '').strip(),
+        'metadata': json.dumps(data)
     }
     
-    # Handle missing values
-    for key in ['name', 'type']:
-        if not cleaned[key]:
-            cleaned[key] = None
-            
     return cleaned
 
 def clean_deposit_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Clean and standardize deposit data"""
     cleaned = {
         'deposit_id': data.get('id'),
-        'customer_id': data.get('customer_id'),
-        'affiliate_id': data.get('affiliate_id'),
-        'asset_id': data.get('asset_id'),
-        'amount': float(data.get('amount', 0)),
-        'status': data.get('status', 'pending').lower(),
-        'deposit_date': standardize_date(data.get('deposit_date')),
-        'processed_date': standardize_date(data.get('processed_date')),
-        'raw_data': json.dumps(data)
+        'client_id': data.get('client_id'),
+        'deposit_time': standardize_date(data.get('deposit_time')),
+        'deposit_coin': data.get('deposit_coin', '').upper().strip(),
+        'deposit_amount': float(data.get('deposit_amount', 0))
     }
     
-    # Handle missing values
-    for key in ['amount']:
-        if cleaned[key] is None:
-            cleaned[key] = 0
-            
     return cleaned
 
 def clean_trade_data(data: Dict[str, Any]) -> Dict[str, Any]:
     """Clean and standardize trade data"""
     cleaned = {
-        'trade_id': data.get('id'),
-        'customer_id': data.get('customer_id'),
-        'affiliate_id': data.get('affiliate_id'),
-        'base_asset_id': data.get('base_asset_id'),
-        'quote_asset_id': data.get('quote_asset_id'),
-        'side': data.get('side', '').lower(),
-        'price': float(data.get('price', 0)),
-        'quantity': float(data.get('quantity', 0)),
-        'total_value': float(data.get('total_value', 0)),
-        'trade_date': standardize_date(data.get('trade_date')),
-        'status': data.get('status', 'completed').lower(),
-        'raw_data': json.dumps(data)
+        'trade_activity_id': data.get('id'),
+        'client_id': data.get('client_id'),
+        'trade_time': standardize_date(data.get('trade_time')),
+        'symbol': data.get('symbol', '').upper().strip(),
+        'trade_volume': float(data.get('trade_volume', 0))
     }
     
-    # Handle missing values
-    for key in ['price', 'quantity', 'total_value']:
-        if cleaned[key] is None:
-            cleaned[key] = 0
-            
+    return cleaned
+
+def clean_asset_data(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Clean and standardize asset data"""
+    cleaned = {
+        'asset_id': data.get('id'),
+        'client_id': data.get('client_id'),
+        'balance': float(data.get('balance', 0)),
+        'last_update_time': standardize_date(data.get('last_update_time')),
+        'remark': data.get('remark', '').strip()
+    }
+    
     return cleaned
 
 def transform_bronze_to_silver(conn):
     """Transform bronze data to silver layer"""
+    bronze_dir = os.path.join('data', 'bronze')
+    
+    # First process affiliates
+    process_affiliates(conn, bronze_dir)
+    
     with conn.cursor() as cur:
-        # First, process assets to ensure referential integrity
-        cur.execute("SELECT data FROM bronze_assets")
+        # Process clients
+        cur.execute("SELECT affiliate_id, customer_id, data FROM bronze_customers")
         for row in cur.fetchall():
-            data = json.loads(row[0])
-            cleaned_data = clean_asset_data(data)
+            affiliate_id, customer_id, data_json = row
+            data = json.loads(data_json)
+            cleaned_data = clean_client_data(data)
+            cleaned_data['affiliate_id'] = affiliate_id  # Ensure affiliate_id is set
+            
             cur.execute("""
-                INSERT INTO silver_assets (
-                    asset_id, symbol, name, type, status, raw_data
-                ) VALUES (%s, %s, %s, %s, %s, %s)
-                ON CONFLICT (asset_id) DO UPDATE
-                SET symbol = EXCLUDED.symbol,
-                    name = EXCLUDED.name,
-                    type = EXCLUDED.type,
-                    status = EXCLUDED.status,
-                    raw_data = EXCLUDED.raw_data,
-                    updated_at = CURRENT_TIMESTAMP
-            """, (
-                cleaned_data['asset_id'],
-                cleaned_data['symbol'],
-                cleaned_data['name'],
-                cleaned_data['type'],
-                cleaned_data['status'],
-                cleaned_data['raw_data']
-            ))
-        
-        # Process customers
-        cur.execute("SELECT data FROM bronze_customers")
-        for row in cur.fetchall():
-            data = json.loads(row[0])
-            cleaned_data = clean_customer_data(data)
-            cur.execute("""
-                INSERT INTO silver_customers (
-                    customer_id, affiliate_id, email, first_name, last_name,
-                    country, registration_date, last_activity_date, status, raw_data
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (customer_id) DO UPDATE
-                SET email = EXCLUDED.email,
-                    first_name = EXCLUDED.first_name,
-                    last_name = EXCLUDED.last_name,
+                INSERT INTO ClientAccount (
+                    client_id, affiliate_id, register_time, country, metadata
+                ) VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (client_id) DO UPDATE
+                SET affiliate_id = EXCLUDED.affiliate_id,
+                    register_time = EXCLUDED.register_time,
                     country = EXCLUDED.country,
-                    registration_date = EXCLUDED.registration_date,
-                    last_activity_date = EXCLUDED.last_activity_date,
-                    status = EXCLUDED.status,
-                    raw_data = EXCLUDED.raw_data,
-                    updated_at = CURRENT_TIMESTAMP
+                    metadata = EXCLUDED.metadata
             """, (
-                cleaned_data['customer_id'],
+                cleaned_data['client_id'],
                 cleaned_data['affiliate_id'],
-                cleaned_data['email'],
-                cleaned_data['first_name'],
-                cleaned_data['last_name'],
+                cleaned_data['register_time'],
                 cleaned_data['country'],
-                cleaned_data['registration_date'],
-                cleaned_data['last_activity_date'],
-                cleaned_data['status'],
-                cleaned_data['raw_data']
+                cleaned_data['metadata']
             ))
         
         # Process deposits
-        cur.execute("SELECT data FROM bronze_deposits")
+        cur.execute("SELECT affiliate_id, deposit_id, data FROM bronze_deposits")
         for row in cur.fetchall():
-            data = json.loads(row[0])
+            affiliate_id, deposit_id, data_json = row
+            data = json.loads(data_json)
             cleaned_data = clean_deposit_data(data)
+            
             cur.execute("""
-                INSERT INTO silver_deposits (
-                    deposit_id, customer_id, affiliate_id, asset_id,
-                    amount, status, deposit_date, processed_date, raw_data
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO Deposits (
+                    deposit_id, client_id, deposit_time, deposit_coin, deposit_amount
+                ) VALUES (%s, %s, %s, %s, %s)
                 ON CONFLICT (deposit_id) DO UPDATE
-                SET customer_id = EXCLUDED.customer_id,
-                    affiliate_id = EXCLUDED.affiliate_id,
-                    asset_id = EXCLUDED.asset_id,
-                    amount = EXCLUDED.amount,
-                    status = EXCLUDED.status,
-                    deposit_date = EXCLUDED.deposit_date,
-                    processed_date = EXCLUDED.processed_date,
-                    raw_data = EXCLUDED.raw_data,
-                    updated_at = CURRENT_TIMESTAMP
+                SET client_id = EXCLUDED.client_id,
+                    deposit_time = EXCLUDED.deposit_time,
+                    deposit_coin = EXCLUDED.deposit_coin,
+                    deposit_amount = EXCLUDED.deposit_amount
             """, (
                 cleaned_data['deposit_id'],
-                cleaned_data['customer_id'],
-                cleaned_data['affiliate_id'],
-                cleaned_data['asset_id'],
-                cleaned_data['amount'],
-                cleaned_data['status'],
-                cleaned_data['deposit_date'],
-                cleaned_data['processed_date'],
-                cleaned_data['raw_data']
+                cleaned_data['client_id'],
+                cleaned_data['deposit_time'],
+                cleaned_data['deposit_coin'],
+                cleaned_data['deposit_amount']
             ))
         
         # Process trades
-        cur.execute("SELECT data FROM bronze_trades")
+        cur.execute("SELECT affiliate_id, trade_id, data FROM bronze_trades")
         for row in cur.fetchall():
-            data = json.loads(row[0])
+            affiliate_id, trade_id, data_json = row
+            data = json.loads(data_json)
             cleaned_data = clean_trade_data(data)
+            
             cur.execute("""
-                INSERT INTO silver_trades (
-                    trade_id, customer_id, affiliate_id, base_asset_id,
-                    quote_asset_id, side, price, quantity, total_value,
-                    trade_date, status, raw_data
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (trade_id) DO UPDATE
-                SET customer_id = EXCLUDED.customer_id,
-                    affiliate_id = EXCLUDED.affiliate_id,
-                    base_asset_id = EXCLUDED.base_asset_id,
-                    quote_asset_id = EXCLUDED.quote_asset_id,
-                    side = EXCLUDED.side,
-                    price = EXCLUDED.price,
-                    quantity = EXCLUDED.quantity,
-                    total_value = EXCLUDED.total_value,
-                    trade_date = EXCLUDED.trade_date,
-                    status = EXCLUDED.status,
-                    raw_data = EXCLUDED.raw_data,
-                    updated_at = CURRENT_TIMESTAMP
+                INSERT INTO TradeActivities (
+                    trade_activity_id, client_id, trade_time, symbol, trade_volume
+                ) VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (trade_activity_id) DO UPDATE
+                SET client_id = EXCLUDED.client_id,
+                    trade_time = EXCLUDED.trade_time,
+                    symbol = EXCLUDED.symbol,
+                    trade_volume = EXCLUDED.trade_volume
             """, (
-                cleaned_data['trade_id'],
-                cleaned_data['customer_id'],
-                cleaned_data['affiliate_id'],
-                cleaned_data['base_asset_id'],
-                cleaned_data['quote_asset_id'],
-                cleaned_data['side'],
-                cleaned_data['price'],
-                cleaned_data['quantity'],
-                cleaned_data['total_value'],
-                cleaned_data['trade_date'],
-                cleaned_data['status'],
-                cleaned_data['raw_data']
+                cleaned_data['trade_activity_id'],
+                cleaned_data['client_id'],
+                cleaned_data['trade_time'],
+                cleaned_data['symbol'],
+                cleaned_data['trade_volume']
+            ))
+        
+        # Process assets
+        cur.execute("SELECT affiliate_id, asset_id, data FROM bronze_assets")
+        for row in cur.fetchall():
+            affiliate_id, asset_id, data_json = row
+            data = json.loads(data_json)
+            cleaned_data = clean_asset_data(data)
+            
+            cur.execute("""
+                INSERT INTO Assets (
+                    asset_id, client_id, balance, last_update_time, remark
+                ) VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (asset_id) DO UPDATE
+                SET client_id = EXCLUDED.client_id,
+                    balance = EXCLUDED.balance,
+                    last_update_time = EXCLUDED.last_update_time,
+                    remark = EXCLUDED.remark
+            """, (
+                cleaned_data['asset_id'],
+                cleaned_data['client_id'],
+                cleaned_data['balance'],
+                cleaned_data['last_update_time'],
+                cleaned_data['remark']
             ))
         
     conn.commit()
@@ -403,10 +305,10 @@ def main():
     conn = psycopg2.connect(**DB_PARAMS)
     
     try:
-        # Create silver tables and views
+        # Create tables
         create_silver_tables(conn)
         
-        # Transform bronze data to silver
+        # Transform data
         transform_bronze_to_silver(conn)
         
         print("Successfully transformed bronze data to silver layer")

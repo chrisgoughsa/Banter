@@ -11,49 +11,124 @@ DB_PARAMS = {
     'password': 'postgres'
 }
 
-def create_gold_tables(conn):
-    """Create gold layer tables focused on affiliate performance metrics"""
+def drop_existing_objects(conn):
+    """Drop any existing tables or views with gold_ prefix"""
     with conn.cursor() as cur:
-        # Create daily affiliate performance table
+        # Get list of existing tables and views
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS gold_affiliate_daily_metrics (
-                date DATE,
-                affiliate_id VARCHAR(50),
-                new_signups INTEGER,
-                active_customers INTEGER,
-                total_trading_volume DECIMAL(20,8),
-                total_trades INTEGER,
-                average_trade_size DECIMAL(20,8),
-                PRIMARY KEY (date, affiliate_id)
-            )
+            SELECT table_name, table_type
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name LIKE 'gold_%'
         """)
         
-        # Create weekly affiliate performance table
+        # Drop each object
+        for obj in cur.fetchall():
+            name, obj_type = obj
+            if obj_type == 'BASE TABLE':
+                cur.execute(f"DROP TABLE IF EXISTS {name} CASCADE")
+            elif obj_type == 'VIEW':
+                cur.execute(f"DROP VIEW IF EXISTS {name} CASCADE")
+        
+    conn.commit()
+
+def create_gold_views(conn):
+    """Create gold layer views focused on affiliate performance metrics"""
+    # First drop any existing objects
+    drop_existing_objects(conn)
+    
+    with conn.cursor() as cur:
+        # Create daily affiliate performance view
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS gold_affiliate_weekly_metrics (
-                week_start DATE,
-                affiliate_id VARCHAR(50),
-                new_signups INTEGER,
-                active_customers INTEGER,
-                total_trading_volume DECIMAL(20,8),
-                total_trades INTEGER,
-                average_trade_size DECIMAL(20,8),
-                PRIMARY KEY (week_start, affiliate_id)
+            CREATE OR REPLACE VIEW gold_affiliate_daily_metrics AS
+            WITH daily_signups AS (
+                SELECT 
+                    DATE_TRUNC('day', register_time) as date,
+                    affiliate_id,
+                    COUNT(*) as new_signups
+                FROM ClientAccount
+                GROUP BY DATE_TRUNC('day', register_time), affiliate_id
+            ),
+            daily_trades AS (
+                SELECT 
+                    DATE_TRUNC('day', trade_time) as date,
+                    c.affiliate_id,
+                    COUNT(*) as total_trades,
+                    SUM(trade_volume) as total_volume
+                FROM TradeActivities t
+                JOIN ClientAccount c ON t.client_id = c.client_id
+                GROUP BY DATE_TRUNC('day', trade_time), c.affiliate_id
             )
+            SELECT 
+                COALESCE(s.date, t.date) as date,
+                COALESCE(s.affiliate_id, t.affiliate_id) as affiliate_id,
+                COALESCE(s.new_signups, 0) as new_signups,
+                COALESCE(t.total_trades, 0) as total_trades,
+                COALESCE(t.total_volume, 0) as total_volume
+            FROM daily_signups s
+            FULL OUTER JOIN daily_trades t ON s.date = t.date AND s.affiliate_id = t.affiliate_id
         """)
         
-        # Create monthly affiliate performance table
+        # Create weekly affiliate performance view
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS gold_affiliate_monthly_metrics (
-                month_start DATE,
-                affiliate_id VARCHAR(50),
-                new_signups INTEGER,
-                active_customers INTEGER,
-                total_trading_volume DECIMAL(20,8),
-                total_trades INTEGER,
-                average_trade_size DECIMAL(20,8),
-                PRIMARY KEY (month_start, affiliate_id)
+            CREATE OR REPLACE VIEW gold_affiliate_weekly_metrics AS
+            WITH weekly_signups AS (
+                SELECT 
+                    DATE_TRUNC('week', register_time) as week_start,
+                    affiliate_id,
+                    COUNT(*) as new_signups
+                FROM ClientAccount
+                GROUP BY DATE_TRUNC('week', register_time), affiliate_id
+            ),
+            weekly_trades AS (
+                SELECT 
+                    DATE_TRUNC('week', trade_time) as week_start,
+                    c.affiliate_id,
+                    COUNT(*) as total_trades,
+                    SUM(trade_volume) as total_volume
+                FROM TradeActivities t
+                JOIN ClientAccount c ON t.client_id = c.client_id
+                GROUP BY DATE_TRUNC('week', trade_time), c.affiliate_id
             )
+            SELECT 
+                COALESCE(s.week_start, t.week_start) as week_start,
+                COALESCE(s.affiliate_id, t.affiliate_id) as affiliate_id,
+                COALESCE(s.new_signups, 0) as new_signups,
+                COALESCE(t.total_trades, 0) as total_trades,
+                COALESCE(t.total_volume, 0) as total_volume
+            FROM weekly_signups s
+            FULL OUTER JOIN weekly_trades t ON s.week_start = t.week_start AND s.affiliate_id = t.affiliate_id
+        """)
+        
+        # Create monthly affiliate performance view
+        cur.execute("""
+            CREATE OR REPLACE VIEW gold_affiliate_monthly_metrics AS
+            WITH monthly_signups AS (
+                SELECT 
+                    DATE_TRUNC('month', register_time) as month_start,
+                    affiliate_id,
+                    COUNT(*) as new_signups
+                FROM ClientAccount
+                GROUP BY DATE_TRUNC('month', register_time), affiliate_id
+            ),
+            monthly_trades AS (
+                SELECT 
+                    DATE_TRUNC('month', trade_time) as month_start,
+                    c.affiliate_id,
+                    COUNT(*) as total_trades,
+                    SUM(trade_volume) as total_volume
+                FROM TradeActivities t
+                JOIN ClientAccount c ON t.client_id = c.client_id
+                GROUP BY DATE_TRUNC('month', trade_time), c.affiliate_id
+            )
+            SELECT 
+                COALESCE(s.month_start, t.month_start) as month_start,
+                COALESCE(s.affiliate_id, t.affiliate_id) as affiliate_id,
+                COALESCE(s.new_signups, 0) as new_signups,
+                COALESCE(t.total_trades, 0) as total_trades,
+                COALESCE(t.total_volume, 0) as total_volume
+            FROM monthly_signups s
+            FULL OUTER JOIN monthly_trades t ON s.month_start = t.month_start AND s.affiliate_id = t.affiliate_id
         """)
         
         # Create affiliate customer acquisition funnel view
@@ -63,31 +138,32 @@ def create_gold_tables(conn):
                 SELECT 
                     affiliate_id,
                     COUNT(*) as total_customers,
-                    COUNT(CASE WHEN registration_date >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as new_customers_30d,
-                    COUNT(CASE WHEN last_activity_date >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as active_customers_30d,
-                    COUNT(CASE WHEN status = 'active' THEN 1 END) as active_customers
-                FROM silver_customers
+                    COUNT(CASE WHEN register_time >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as new_customers_30d,
+                    COUNT(CASE WHEN EXISTS (
+                        SELECT 1 FROM TradeActivities t 
+                        WHERE t.client_id = c.client_id 
+                        AND t.trade_time >= CURRENT_DATE - INTERVAL '30 days'
+                    ) THEN 1 END) as active_customers_30d
+                FROM ClientAccount c
                 GROUP BY affiliate_id
             ),
             trading_metrics AS (
                 SELECT 
-                    affiliate_id,
+                    c.affiliate_id,
                     COUNT(*) as total_trades,
-                    SUM(total_value) as total_volume,
-                    AVG(total_value) as avg_trade_size
-                FROM silver_trades
-                WHERE trade_date >= CURRENT_DATE - INTERVAL '30 days'
-                GROUP BY affiliate_id
+                    SUM(trade_volume) as total_volume
+                FROM TradeActivities t
+                JOIN ClientAccount c ON t.client_id = c.client_id
+                WHERE t.trade_time >= CURRENT_DATE - INTERVAL '30 days'
+                GROUP BY c.affiliate_id
             )
             SELECT 
                 c.affiliate_id,
                 c.total_customers,
                 c.new_customers_30d,
                 c.active_customers_30d,
-                c.active_customers,
                 COALESCE(t.total_trades, 0) as trades_30d,
-                COALESCE(t.total_volume, 0) as volume_30d,
-                COALESCE(t.avg_trade_size, 0) as avg_trade_size
+                COALESCE(t.total_volume, 0) as volume_30d
             FROM customer_metrics c
             LEFT JOIN trading_metrics t ON c.affiliate_id = t.affiliate_id
         """)
@@ -97,33 +173,36 @@ def create_gold_tables(conn):
             CREATE OR REPLACE VIEW gold_affiliate_performance_trend AS
             WITH daily_metrics AS (
                 SELECT 
-                    DATE_TRUNC('day', trade_date) as date,
-                    affiliate_id,
+                    DATE_TRUNC('day', trade_time) as date,
+                    c.affiliate_id,
                     COUNT(*) as daily_trades,
-                    SUM(total_value) as daily_volume
-                FROM silver_trades
-                WHERE trade_date >= CURRENT_DATE - INTERVAL '90 days'
-                GROUP BY DATE_TRUNC('day', trade_date), affiliate_id
+                    SUM(trade_volume) as daily_volume
+                FROM TradeActivities t
+                JOIN ClientAccount c ON t.client_id = c.client_id
+                WHERE trade_time >= CURRENT_DATE - INTERVAL '90 days'
+                GROUP BY DATE_TRUNC('day', trade_time), c.affiliate_id
             ),
             weekly_metrics AS (
                 SELECT 
-                    DATE_TRUNC('week', trade_date) as week,
-                    affiliate_id,
+                    DATE_TRUNC('week', trade_time) as week,
+                    c.affiliate_id,
                     COUNT(*) as weekly_trades,
-                    SUM(total_value) as weekly_volume
-                FROM silver_trades
-                WHERE trade_date >= CURRENT_DATE - INTERVAL '90 days'
-                GROUP BY DATE_TRUNC('week', trade_date), affiliate_id
+                    SUM(trade_volume) as weekly_volume
+                FROM TradeActivities t
+                JOIN ClientAccount c ON t.client_id = c.client_id
+                WHERE trade_time >= CURRENT_DATE - INTERVAL '90 days'
+                GROUP BY DATE_TRUNC('week', trade_time), c.affiliate_id
             ),
             monthly_metrics AS (
                 SELECT 
-                    DATE_TRUNC('month', trade_date) as month,
-                    affiliate_id,
+                    DATE_TRUNC('month', trade_time) as month,
+                    c.affiliate_id,
                     COUNT(*) as monthly_trades,
-                    SUM(total_value) as monthly_volume
-                FROM silver_trades
-                WHERE trade_date >= CURRENT_DATE - INTERVAL '90 days'
-                GROUP BY DATE_TRUNC('month', trade_date), affiliate_id
+                    SUM(trade_volume) as monthly_volume
+                FROM TradeActivities t
+                JOIN ClientAccount c ON t.client_id = c.client_id
+                WHERE trade_time >= CURRENT_DATE - INTERVAL '90 days'
+                GROUP BY DATE_TRUNC('month', trade_time), c.affiliate_id
             )
             SELECT 
                 d.date,
@@ -144,183 +223,15 @@ def create_gold_tables(conn):
         
     conn.commit()
 
-def calculate_daily_metrics(conn, date: datetime):
-    """Calculate and store daily metrics for all affiliates"""
-    with conn.cursor() as cur:
-        # Get new signups and active customers
-        cur.execute("""
-            INSERT INTO gold_affiliate_daily_metrics (
-                date, affiliate_id, new_signups, active_customers,
-                total_trading_volume, total_trades, average_trade_size
-            )
-            WITH customer_metrics AS (
-                SELECT 
-                    affiliate_id,
-                    COUNT(CASE WHEN registration_date = %s THEN 1 END) as new_signups,
-                    COUNT(CASE WHEN last_activity_date = %s THEN 1 END) as active_customers
-                FROM silver_customers
-                GROUP BY affiliate_id
-            ),
-            trading_metrics AS (
-                SELECT 
-                    affiliate_id,
-                    COUNT(*) as total_trades,
-                    SUM(total_value) as total_volume,
-                    AVG(total_value) as avg_trade_size
-                FROM silver_trades
-                WHERE trade_date = %s
-                GROUP BY affiliate_id
-            )
-            SELECT 
-                %s as date,
-                COALESCE(c.affiliate_id, t.affiliate_id) as affiliate_id,
-                COALESCE(c.new_signups, 0) as new_signups,
-                COALESCE(c.active_customers, 0) as active_customers,
-                COALESCE(t.total_volume, 0) as total_volume,
-                COALESCE(t.total_trades, 0) as total_trades,
-                COALESCE(t.avg_trade_size, 0) as avg_trade_size
-            FROM customer_metrics c
-            FULL OUTER JOIN trading_metrics t ON c.affiliate_id = t.affiliate_id
-            ON CONFLICT (date, affiliate_id) DO UPDATE
-            SET new_signups = EXCLUDED.new_signups,
-                active_customers = EXCLUDED.active_customers,
-                total_trading_volume = EXCLUDED.total_trading_volume,
-                total_trades = EXCLUDED.total_trades,
-                average_trade_size = EXCLUDED.average_trade_size
-        """, (date, date, date, date))
-        
-    conn.commit()
-
-def calculate_weekly_metrics(conn, week_start: datetime):
-    """Calculate and store weekly metrics for all affiliates"""
-    with conn.cursor() as cur:
-        week_end = week_start + timedelta(days=6)
-        
-        cur.execute("""
-            INSERT INTO gold_affiliate_weekly_metrics (
-                week_start, affiliate_id, new_signups, active_customers,
-                total_trading_volume, total_trades, average_trade_size
-            )
-            WITH customer_metrics AS (
-                SELECT 
-                    affiliate_id,
-                    COUNT(CASE WHEN registration_date BETWEEN %s AND %s THEN 1 END) as new_signups,
-                    COUNT(CASE WHEN last_activity_date BETWEEN %s AND %s THEN 1 END) as active_customers
-                FROM silver_customers
-                GROUP BY affiliate_id
-            ),
-            trading_metrics AS (
-                SELECT 
-                    affiliate_id,
-                    COUNT(*) as total_trades,
-                    SUM(total_value) as total_volume,
-                    AVG(total_value) as avg_trade_size
-                FROM silver_trades
-                WHERE trade_date BETWEEN %s AND %s
-                GROUP BY affiliate_id
-            )
-            SELECT 
-                %s as week_start,
-                COALESCE(c.affiliate_id, t.affiliate_id) as affiliate_id,
-                COALESCE(c.new_signups, 0) as new_signups,
-                COALESCE(c.active_customers, 0) as active_customers,
-                COALESCE(t.total_volume, 0) as total_volume,
-                COALESCE(t.total_trades, 0) as total_trades,
-                COALESCE(t.avg_trade_size, 0) as avg_trade_size
-            FROM customer_metrics c
-            FULL OUTER JOIN trading_metrics t ON c.affiliate_id = t.affiliate_id
-            ON CONFLICT (week_start, affiliate_id) DO UPDATE
-            SET new_signups = EXCLUDED.new_signups,
-                active_customers = EXCLUDED.active_customers,
-                total_trading_volume = EXCLUDED.total_trading_volume,
-                total_trades = EXCLUDED.total_trades,
-                average_trade_size = EXCLUDED.average_trade_size
-        """, (week_start, week_end, week_start, week_end, week_start, week_end, week_start))
-        
-    conn.commit()
-
-def calculate_monthly_metrics(conn, month_start: datetime):
-    """Calculate and store monthly metrics for all affiliates"""
-    with conn.cursor() as cur:
-        # Calculate last day of month
-        if month_start.month == 12:
-            next_month = month_start.replace(year=month_start.year + 1, month=1)
-        else:
-            next_month = month_start.replace(month=month_start.month + 1)
-        month_end = next_month - timedelta(days=1)
-        
-        cur.execute("""
-            INSERT INTO gold_affiliate_monthly_metrics (
-                month_start, affiliate_id, new_signups, active_customers,
-                total_trading_volume, total_trades, average_trade_size
-            )
-            WITH customer_metrics AS (
-                SELECT 
-                    affiliate_id,
-                    COUNT(CASE WHEN registration_date BETWEEN %s AND %s THEN 1 END) as new_signups,
-                    COUNT(CASE WHEN last_activity_date BETWEEN %s AND %s THEN 1 END) as active_customers
-                FROM silver_customers
-                GROUP BY affiliate_id
-            ),
-            trading_metrics AS (
-                SELECT 
-                    affiliate_id,
-                    COUNT(*) as total_trades,
-                    SUM(total_value) as total_volume,
-                    AVG(total_value) as avg_trade_size
-                FROM silver_trades
-                WHERE trade_date BETWEEN %s AND %s
-                GROUP BY affiliate_id
-            )
-            SELECT 
-                %s as month_start,
-                COALESCE(c.affiliate_id, t.affiliate_id) as affiliate_id,
-                COALESCE(c.new_signups, 0) as new_signups,
-                COALESCE(c.active_customers, 0) as active_customers,
-                COALESCE(t.total_volume, 0) as total_volume,
-                COALESCE(t.total_trades, 0) as total_trades,
-                COALESCE(t.avg_trade_size, 0) as avg_trade_size
-            FROM customer_metrics c
-            FULL OUTER JOIN trading_metrics t ON c.affiliate_id = t.affiliate_id
-            ON CONFLICT (month_start, affiliate_id) DO UPDATE
-            SET new_signups = EXCLUDED.new_signups,
-                active_customers = EXCLUDED.active_customers,
-                total_trading_volume = EXCLUDED.total_trading_volume,
-                total_trades = EXCLUDED.total_trades,
-                average_trade_size = EXCLUDED.average_trade_size
-        """, (month_start, month_end, month_start, month_end, month_start, month_end, month_start))
-        
-    conn.commit()
-
-def transform_silver_to_gold(conn):
-    """Transform silver data to gold layer"""
-    # Create gold tables and views
-    create_gold_tables(conn)
-    
-    # Calculate metrics for the last 90 days
-    today = datetime.now().date()
-    for i in range(90):
-        date = today - timedelta(days=i)
-        calculate_daily_metrics(conn, date)
-        
-        # Calculate weekly metrics on Sundays
-        if date.weekday() == 6:  # Sunday
-            week_start = date - timedelta(days=6)
-            calculate_weekly_metrics(conn, week_start)
-            
-        # Calculate monthly metrics on the first day of each month
-        if date.day == 1:
-            calculate_monthly_metrics(conn, date)
-
 def main():
     # Connect to the database
     conn = psycopg2.connect(**DB_PARAMS)
     
     try:
-        # Transform silver data to gold
-        transform_silver_to_gold(conn)
+        # Create gold views
+        create_gold_views(conn)
         
-        print("Successfully transformed silver data to gold layer")
+        print("Successfully created gold layer views")
         
     except Exception as e:
         print(f"Error: {e}")
