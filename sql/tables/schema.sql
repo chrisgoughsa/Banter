@@ -1,4 +1,8 @@
 -- ========================
+-- Silver Layer Tables
+-- ========================
+
+-- ========================
 -- 1. AffiliateAccount Table
 -- ========================
 CREATE TABLE AffiliateAccount (
