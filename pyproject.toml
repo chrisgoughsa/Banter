@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "crypto-data-platform"
 version = "0.1.0"
-description = "ETL pipeline for Crypto Banter's data platform"
+description = "A data platform for crypto trading analytics with ETL pipeline and dashboard"
 authors = ["Your Name <your.email@example.com>"]
 readme = "README.md"
 
@@ -16,12 +16,16 @@ pyyaml = "^6.0.1"
 loguru = "^0.7.2"
 python-dateutil = "^2.8.2"
 pytz = "^2023.3"
-fastapi = "^0.110.0"
-uvicorn = "^0.27.1"
+fastapi = "^0.109.0"
+uvicorn = "^0.27.0"
 pydantic = "^2.6.3"
+dbt = "^1.0.0.38.38"
+dbt-postgres = "^1.9.0"
+aiofiles = "^23.2.1"
+jinja2 = "^3.1.2"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.2"
+pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 black = "^23.7.0"
 isort = "^5.12.0"
@@ -29,7 +33,7 @@ mypy = "^1.5.1"
 flake8 = "^6.1.0"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
