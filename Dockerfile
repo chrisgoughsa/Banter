@@ -24,7 +24,7 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry config virtualenvs.create false
 
 # Install dependencies
-RUN poetry install --no-interaction --no-ansi
+RUN poetry install --no-interaction --no-ansi --no-root
 
 # Copy the rest of the application
 COPY . .
@@ -36,5 +36,24 @@ ENV PYTHONUNBUFFERED=1
 # Expose the port the app runs on
 EXPOSE 8000
 
+# Create startup script
+RUN echo '#!/bin/bash\n\
+# Wait for database to be ready\n\
+echo "Waiting for database to be ready..."\n\
+sleep 5\n\
+\n\
+# Setup database\n\
+echo "Setting up database..."\n\
+poetry run python -c "from src.utils.db_setup import create_all_tables; from src.db.connection import create_db_connection; create_all_tables(create_db_connection())"\n\
+\n\
+# Run regular ETL process\n\
+echo "Running regular ETL process..."\n\
+poetry run python main.py etl --layer all\n\
+\n\
+# Start dashboard\n\
+echo "Starting dashboard..."\n\
+poetry run python main.py dashboard --host 0.0.0.0 --port 8000' > /app/start.sh && \
+chmod +x /app/start.sh
+
 # Command to run the application
-CMD ["poetry", "run", "python", "main.py", "dashboard", "--host", "0.0.0.0", "--port", "8000"] 
+CMD ["/app/start.sh"] 

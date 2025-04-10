@@ -15,6 +15,7 @@ services:
       - db
     volumes:
       - ./data:/app/data
+      - ./data/bronze:/app/data/bronze
 
   db:
     image: postgres:13

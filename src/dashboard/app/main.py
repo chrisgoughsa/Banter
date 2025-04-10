@@ -18,11 +18,11 @@ logger = logging.getLogger(__name__)
 
 # Database connection parameters
 DB_PARAMS = {
-    'host': 'localhost',
-    'port': 5432,
-    'database': 'crypto_data_platform',
-    'user': 'postgres',
-    'password': 'postgres'
+    'host': os.getenv('DB_HOST', 'localhost'),
+    'port': int(os.getenv('DB_PORT', 5432)),
+    'database': os.getenv('DB_NAME', 'crypto_data'),
+    'user': os.getenv('DB_USER', 'postgres'),
+    'password': os.getenv('DB_PASSWORD', 'postgres')
 }
 
 app = FastAPI(title="Crypto Data Platform Dashboard")
