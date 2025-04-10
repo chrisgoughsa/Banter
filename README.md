@@ -20,7 +20,7 @@ A comprehensive data platform for cryptocurrency trading analytics, built with P
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/crypto-data-platform.git
+git clone https://github.com/chrisgoughsa/Banter.git
 cd crypto-data-platform
 ```
 
