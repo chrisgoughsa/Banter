@@ -200,35 +200,84 @@ class GoldViewManager:
         """Create ETL dashboard metrics view."""
         try:
             query = """
-                WITH etl_metrics AS (
+                WITH bronze_metrics AS (
                     SELECT 
-                        a.affiliate_id,
+                        affiliate_id,
+                        COUNT(DISTINCT client_id) as bronze_customers,
+                        CURRENT_TIMESTAMP as bronze_update_time
+                    FROM bronze_customers
+                    GROUP BY affiliate_id
+                ),
+                silver_metrics AS (
+                    SELECT 
+                        affiliate_id,
+                        COUNT(DISTINCT client_id) as silver_customers,
+                        CURRENT_TIMESTAMP as silver_update_time
+                    FROM clientaccount
+                    GROUP BY affiliate_id
+                ),
+                gold_metrics AS (
+                    SELECT 
+                        affiliate_id,
+                        CURRENT_TIMESTAMP as gold_update_time
+                    FROM gold_affiliate_daily_metrics
+                    GROUP BY affiliate_id
+                ),
+                etl_status AS (
+                    SELECT 
+                        COALESCE(b.affiliate_id, s.affiliate_id, g.affiliate_id) as affiliate_id,
                         a.name as affiliate_name,
-                        a.last_updated as affiliate_update_time,
-                        COUNT(DISTINCT c.client_id) as total_records,
-                        COUNT(DISTINCT c.client_id) as success_count,
-                        0 as error_count,
-                        0 as partial_count
-                    FROM affiliateaccount a
-                    LEFT JOIN clientaccount c ON a.affiliate_id = c.affiliate_id
-                    GROUP BY a.affiliate_id, a.name, a.last_updated
+                        b.bronze_customers,
+                        b.bronze_update_time,
+                        s.silver_customers,
+                        s.silver_update_time,
+                        g.gold_update_time,
+                        CASE 
+                            WHEN b.bronze_customers > 0 AND s.silver_customers > 0 AND g.gold_update_time IS NOT NULL 
+                            THEN 'Complete'
+                            WHEN b.bronze_customers > 0 AND s.silver_customers > 0 
+                            THEN 'Silver Complete'
+                            WHEN b.bronze_customers > 0 
+                            THEN 'Bronze Complete'
+                            ELSE 'Not Started'
+                        END as etl_status,
+                        CASE 
+                            WHEN b.bronze_customers > 0 AND s.silver_customers > 0 AND g.gold_update_time IS NOT NULL 
+                            THEN 100
+                            WHEN b.bronze_customers > 0 AND s.silver_customers > 0 
+                            THEN 66
+                            WHEN b.bronze_customers > 0 
+                            THEN 33
+                            ELSE 0
+                        END as completion_percentage
+                    FROM bronze_metrics b
+                    FULL OUTER JOIN silver_metrics s ON b.affiliate_id = s.affiliate_id
+                    FULL OUTER JOIN gold_metrics g ON b.affiliate_id = g.affiliate_id
+                    LEFT JOIN affiliateaccount a ON COALESCE(b.affiliate_id, s.affiliate_id, g.affiliate_id) = a.affiliate_id
                 )
                 SELECT 
                     affiliate_id,
                     affiliate_name,
-                    affiliate_update_time,
-                    total_records,
-                    success_count,
-                    error_count,
-                    partial_count,
+                    bronze_customers as total_records,
                     CASE 
-                        WHEN total_records > 0 
-                        THEN ROUND(100.0 * success_count / total_records, 2)
-                        ELSE 0 
-                    END as success_rate,
-                    CURRENT_TIMESTAMP as last_updated,
-                    'etl_dashboard' as view_type
-                FROM etl_metrics
+                        WHEN etl_status = 'Complete' THEN bronze_customers
+                        ELSE 0
+                    END as success_count,
+                    CASE 
+                        WHEN etl_status = 'Not Started' THEN bronze_customers
+                        ELSE 0
+                    END as error_count,
+                    CASE 
+                        WHEN etl_status IN ('Bronze Complete', 'Silver Complete') THEN bronze_customers
+                        ELSE 0
+                    END as partial_count,
+                    completion_percentage as success_rate,
+                    bronze_update_time,
+                    silver_update_time,
+                    gold_update_time,
+                    etl_status,
+                    CURRENT_TIMESTAMP as last_updated
+                FROM etl_status
                 ORDER BY affiliate_id
             """
             self.create_or_replace_view('gold_etl_affiliate_dashboard', query)

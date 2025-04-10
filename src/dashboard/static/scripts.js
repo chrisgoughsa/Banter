@@ -283,17 +283,38 @@ async function updateMetricsTable() {
 // Initialize dashboard
 async function initializeDashboard() {
     try {
+        console.log('Initializing dashboard...');
+        
+        // Update ETL Status
+        console.log('Updating ETL status...');
         await updateETLStatus();
+        
+        // Update Top Affiliates Chart
+        console.log('Updating top affiliates chart...');
         await updateTopAffiliatesChart();
+        
+        // Update Metrics Charts
+        console.log('Updating metrics charts...');
         await updateMetricsCharts();
+        
+        // Update Metrics Table
+        console.log('Updating metrics table...');
         await updateMetricsTable();
+        
+        console.log('Dashboard initialization complete');
         
         // Refresh data every minute
         setInterval(async () => {
-            await updateETLStatus();
-            await updateTopAffiliatesChart();
-            await updateMetricsCharts();
-            await updateMetricsTable();
+            try {
+                console.log('Refreshing dashboard data...');
+                await updateETLStatus();
+                await updateTopAffiliatesChart();
+                await updateMetricsCharts();
+                await updateMetricsTable();
+                console.log('Dashboard refresh complete');
+            } catch (error) {
+                console.error('Error during dashboard refresh:', error);
+            }
         }, 60000);
     } catch (error) {
         console.error('Error initializing dashboard:', error);
@@ -301,4 +322,10 @@ async function initializeDashboard() {
 }
 
 // Start the dashboard when the page loads
-document.addEventListener('DOMContentLoaded', initializeDashboard); 
+console.log('Waiting for DOM to load...');
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, starting dashboard initialization');
+    initializeDashboard().catch(error => {
+        console.error('Failed to initialize dashboard:', error);
+    });
+}); 
