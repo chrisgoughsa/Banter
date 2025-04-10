@@ -235,6 +235,18 @@ def run_dashboard(host: str = "0.0.0.0", port: int = 8000) -> None:
         logger.error(f"Dashboard server failed: {e}")
         sys.exit(1)
 
+def reset_db() -> None:
+    """Reset the database using db_reset.py."""
+    logger.info("Resetting database...")
+    try:
+        # Import and run db_reset
+        from src.utils.db_reset import reset_database
+        reset_database()
+        logger.info("Database reset completed successfully")
+    except Exception as e:
+        logger.error(f"Database reset failed: {e}")
+        sys.exit(1)
+
 def main():
     """Main entry point with command line argument parsing."""
     parser = argparse.ArgumentParser(description='Crypto Data Platform')
@@ -272,6 +284,9 @@ def main():
         help='Port to bind the server to (default: 8000)'
     )
     
+    # Reset database parser
+    reset_parser = subparsers.add_parser('reset', help='Reset the database')
+    
     args = parser.parse_args()
     
     if args.command == 'etl':
@@ -293,6 +308,8 @@ def main():
             sys.exit(1)
     elif args.command == 'dashboard':
         run_dashboard(args.host, args.port)
+    elif args.command == 'reset':
+        reset_db()
     else:
         parser.print_help()
         sys.exit(1)

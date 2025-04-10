@@ -66,29 +66,61 @@ class BitgetETL:
             
         logger.info(f"Saved {endpoint} data for affiliate {affiliate_id} to {file_path}")
     
-    def extract_customer_list(self, affiliate_id: str, page_no: int = None, page_size: int = None) -> None:
-        """Extract and save customer list data with pagination."""
+    def extract_customer_list(
+        self,
+        affiliate_id: str,
+        page_no: Optional[int] = None,
+        page_size: Optional[int] = None
+    ) -> None:
+        """
+        Extract and save customer list data for an affiliate using pagination.
+        
+        Args:
+            affiliate_id: ID of the affiliate
+            page_no: Optional specific page number to fetch (debug or partial reprocess)
+            page_size: Optional number of records per page (default = 1000)
+        """
         try:
-                page_no = 1
-                page_size = self.etl_config.batch_size
-                has_more = True
+            effective_page_size = page_size or self.etl_config.max_page_size
 
-                while has_more:
-                    logger.info(f"Fetching customer list page {page_no} for affiliate {affiliate_id}")
-                    records = self.client.get_customer_list(
-                        affiliate_id,
-                        page_no=page_no,
-                        page_size=page_size
-                    )
+            if page_no is not None:
+                logger.info(
+                    f"Fetching customer list page {page_no} for affiliate {affiliate_id}"
+                )
+                records = self.client.get_customer_list(
+                    affiliate_id=affiliate_id,
+                    page_no=page_no,
+                    page_size=effective_page_size
+                )
+                if records:
+                    self._save_to_bronze(records, "customer_list", affiliate_id, page_no)
+                else:
+                    logger.info(f"No customer records found on page {page_no}")
+                return
 
-                    if records:
-                        self._save_to_bronze(records, "customer_list", affiliate_id, page_no)
-                        has_more = len(records) == page_size
-                    else:
-                        logger.info(f"No more records found for affiliate {affiliate_id} on page {page_no}")
-                        has_more = False
+            # Full pagination loop
+            current_page = 1
+            while True:
+                logger.info(
+                    f"Fetching customer list page {current_page} for affiliate {affiliate_id}"
+                )
+                records = self.client.get_customer_list(
+                    affiliate_id=affiliate_id,
+                    page_no=current_page,
+                    page_size=effective_page_size
+                )
 
-                    page_no += 1
+                if not records:
+                    logger.info(f"No customer records found in page {current_page}")
+                    break
+
+                self._save_to_bronze(records, "customer_list", affiliate_id, current_page)
+
+                if len(records) < effective_page_size:
+                    logger.info(f"Final page reached: {current_page}")
+                    break
+
+                current_page += 1
 
         except Exception as e:
             logger.error(f"Failed to extract customer list for affiliate {affiliate_id}: {str(e)}")
