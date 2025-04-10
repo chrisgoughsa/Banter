@@ -53,15 +53,17 @@ async def get_etl_status():
                     SELECT DISTINCT 
                         affiliate_name as data_source,
                         last_updated as last_load_time,
-                        'SUCCESS' as etl_status,
-                        total_customers as total_records,
-                        new_signups_30d as success_count,
-                        0 as error_count,
-                        0 as partial_count
+                        etl_status,
+                        total_records,
+                        success_count,
+                        error_count,
+                        partial_count
                     FROM gold_etl_affiliate_dashboard
                     ORDER BY affiliate_name
                 """)
-                return cur.fetchall()
+                result = cur.fetchall()
+                logger.info(f"ETL Status data: {result}")
+                return result
     except Exception as e:
         logger.error(f"Error in get_etl_status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -78,13 +80,16 @@ async def get_top_affiliates(limit: int = 10):
                         trading_volume_30d,
                         monthly_activation_rate,
                         avg_trade_size
-                    FROM gold_etl_affiliate_dashboard
+                    FROM gold_affiliate_performance
                     WHERE affiliate_name IS NOT NULL
                     ORDER BY trading_volume_30d DESC
                     LIMIT %s
                 """, (limit,))
-                return cur.fetchall()
+                result = cur.fetchall()
+                logger.info(f"Top Affiliates data: {result}")
+                return result
     except Exception as e:
+        logger.error(f"Error in get_top_affiliates: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/etl-issues")
@@ -96,13 +101,16 @@ async def get_etl_issues():
                     SELECT 
                         affiliate_name as data_source,
                         last_updated as last_load_time,
-                        0 as error_count,
-                        0 as partial_count
+                        error_count,
+                        partial_count
                     FROM gold_etl_affiliate_dashboard
                     WHERE affiliate_name IS NOT NULL
                 """)
-                return cur.fetchall()
+                result = cur.fetchall()
+                logger.info(f"ETL Issues data: {result}")
+                return result
     except Exception as e:
+        logger.error(f"Error in get_etl_issues: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/affiliate-metrics")
@@ -119,12 +127,15 @@ async def get_affiliate_metrics():
                         trading_volume_30d,
                         monthly_activation_rate,
                         avg_trade_size
-                    FROM gold_etl_affiliate_dashboard
+                    FROM gold_affiliate_performance
                     WHERE affiliate_name IS NOT NULL
                     ORDER BY trading_volume_30d DESC
                 """)
-                return cur.fetchall()
+                result = cur.fetchall()
+                logger.info(f"Affiliate Metrics data: {result}")
+                return result
     except Exception as e:
+        logger.error(f"Error in get_affiliate_metrics: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
