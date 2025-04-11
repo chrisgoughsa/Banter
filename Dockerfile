@@ -1,5 +1,5 @@
-# Use Python 3.9 slim image
-FROM python:3.9-slim
+# Use Python 3.9 slim image with explicit platform
+FROM --platform=linux/amd64 python:3.9-slim
 
 # Set working directory
 WORKDIR /app

@@ -2,6 +2,7 @@ version: '3.8'
 
 services:
   web:
+    platform: linux/amd64
     build: .
     ports:
       - "8000:8000"
@@ -18,6 +19,7 @@ services:
       - ./data/bronze:/app/data/bronze
 
   db:
+    platform: linux/amd64
     image: postgres:13
     ports:
       - "5432:5432"
