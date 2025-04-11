@@ -9,9 +9,9 @@ import pandas as pd
 from psycopg2.extensions import connection
 
 from src.config.settings import ETL_CONFIG
-from src.utils.db import execute_batch, execute_query, DatabaseError
+from src.db.connection import execute_batch, execute_query, DatabaseError
 from src.utils.data_quality import validate_data_quality, log_data_quality_metrics, create_data_quality_table
-from src.utils.db_setup import create_all_tables
+from src.db.setup import create_tables
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class BronzeLoader:
     def __init__(self, conn: connection):
         self.conn = conn
         create_data_quality_table(conn)
-        create_all_tables(conn)
+        create_tables(conn)
         
     def load_data(self, data: List[Dict[str, Any]], table_name: str, columns: List[str]) -> None:
         """Load data into a table."""

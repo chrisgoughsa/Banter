@@ -4,7 +4,7 @@ Gold layer view definitions for analytics.
 import logging
 from psycopg2.extensions import connection
 
-from src.utils.db import execute_query, DatabaseError
+from src.db.connection import execute_query, DatabaseError
 
 logger = logging.getLogger(__name__)
 

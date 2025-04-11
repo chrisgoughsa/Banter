@@ -298,53 +298,53 @@ class BitgetETL:
             logger.error(f"Failed to extract deposits for affiliate {affiliate_id}: {str(e)}")
             raise
         
-   def extract_assets(
-    self,
-    affiliate_id: str,
-    client_id: Optional[str] = None,
-    page_no: Optional[int] = None,
-    page_size: Optional[int] = None
-) -> None:
-    """
-    Extract and save asset data for a client (or all clients) using pagination.
+    def extract_assets(
+        self,
+        affiliate_id: str,
+        client_id: Optional[str] = None,
+        page_no: Optional[int] = None,
+        page_size: Optional[int] = None
+    ) -> None:
+        """
+        Extract and save asset data for a client (or all clients) using pagination.
 
-    Args:
-        affiliate_id: ID of the affiliate
-        client_id: Optional UID of the client
-        page_no: Optional page number to fetch (used for debugging or partial reprocessing)
-        page_size: Optional number of records per batch (default = config.max_page_size)
-    """
-    try:
-        effective_page_size = page_size or self.etl_config.max_page_size or 1000
+        Args:
+            affiliate_id: ID of the affiliate
+            client_id: Optional UID of the client
+            page_no: Optional page number to fetch (used for debugging or partial reprocessing)
+            page_size: Optional number of records per batch (default = config.max_page_size)
+        """
+        try:
+            effective_page_size = page_size or self.etl_config.max_page_size or 1000
 
-        # Full pagination loop
-        current_page = 1
-        while True:
-            logger.info(
-                f"Fetching assets page {current_page} for affiliate {affiliate_id}, client={client_id or 'ALL'}"
-            )
-            records = self.client.get_assets(
-                affiliate_id=affiliate_id,
-                client_id=client_id,
-                page_no=current_page,
-                page_size=effective_page_size
-            )
+            # Full pagination loop
+            current_page = 1
+            while True:
+                logger.info(
+                    f"Fetching assets page {current_page} for affiliate {affiliate_id}, client={client_id or 'ALL'}"
+                )
+                records = self.client.get_assets(
+                    affiliate_id=affiliate_id,
+                    client_id=client_id,
+                    page_no=current_page,
+                    page_size=effective_page_size
+                )
 
-            if not records:
-                logger.info(f"No asset records found on page {current_page}")
-                break
+                if not records:
+                    logger.info(f"No asset records found on page {current_page}")
+                    break
 
-            self._save_to_bronze(records, "assets", affiliate_id, current_page)
+                self._save_to_bronze(records, "assets", affiliate_id, current_page)
 
-            if len(records) < effective_page_size:
-                logger.info(f"Final page reached: {current_page}")
-                break
+                if len(records) < effective_page_size:
+                    logger.info(f"Final page reached: {current_page}")
+                    break
 
-            current_page += 1
+                current_page += 1
 
-    except Exception as e:
-        logger.error(f"Failed to extract assets for affiliate {affiliate_id}: {str(e)}")
-        raise
+        except Exception as e:
+            logger.error(f"Failed to extract assets for affiliate {affiliate_id}: {str(e)}")
+            raise
 
     
     ### TO DO: add a function to run the ETL for a specific affiliate in future so that we can run it more frequently
