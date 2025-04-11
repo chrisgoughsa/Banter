@@ -8,7 +8,7 @@ from datetime import datetime
 import pandas as pd
 from psycopg2.extensions import connection
 
-from src.utils.db import execute_query, execute_batch, DatabaseError
+from src.db.connection import execute_query, execute_batch, DatabaseError
 from src.utils.data_quality import validate_data_quality, log_data_quality_metrics
 from src.config.settings import ETL_CONFIG
 

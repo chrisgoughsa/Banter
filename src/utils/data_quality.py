@@ -10,7 +10,7 @@ import pandas as pd
 from psycopg2.extensions import connection
 
 from src.config.settings import DATA_QUALITY_CONFIG
-from src.utils.db import execute_query, DatabaseError
+from src.db.connection import execute_query, DatabaseError
 
 logger = logging.getLogger(__name__)
 

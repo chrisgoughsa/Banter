@@ -33,13 +33,6 @@ ENV/
 *.swp
 *.swo
 
-# Data
-data/
-*.csv
-*.json
-*.parquet
-*.avro
-
 # Logs
 *.log
 logs/

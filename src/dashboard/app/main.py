@@ -8,22 +8,11 @@ import os
 from typing import List, Dict, Any
 import json
 import logging
+from datetime import datetime, timedelta
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Database connection parameters
-DB_PARAMS = {
-    'host': os.getenv('DB_HOST', 'localhost'),
-    'port': int(os.getenv('DB_PORT', 5432)),
-    'database': os.getenv('DB_NAME', 'crypto_data'),
-    'user': os.getenv('DB_USER', 'postgres'),
-    'password': os.getenv('DB_PASSWORD', 'postgres')
-}
 
 app = FastAPI(title="Crypto Data Platform Dashboard")
 
@@ -41,8 +30,22 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 static_dir = os.path.join(os.path.dirname(current_dir), 'static')
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+# Database configuration
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST", "localhost"),
+    "port": os.getenv("DB_PORT", "5432"),
+    "database": os.getenv("DB_NAME", "crypto_data"),
+    "user": os.getenv("DB_USER", "postgres"),
+    "password": os.getenv("DB_PASSWORD", "postgres")
+}
+
 def get_db_connection():
-    return psycopg2.connect(**DB_PARAMS)
+    try:
+        conn = psycopg2.connect(**DB_CONFIG, cursor_factory=RealDictCursor)
+        return conn
+    except Exception as e:
+        logger.error(f"Database connection error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Database connection failed")
 
 @app.get("/api/etl-status")
 async def get_etl_status():

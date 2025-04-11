@@ -1,0 +1,967 @@
+{
+  "code": "00000",
+  "msg": "success",
+  "requestTime": "1744261543703",
+  "data": [
+    {
+      "balance": "26232.82",
+      "uid": "689101875",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "18458.91",
+      "uid": "534410851",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "34931.71",
+      "uid": "626618645",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "21210.11",
+      "uid": "483002544",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "14461.27",
+      "uid": "335608675",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "45946.45",
+      "uid": "928898362",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "13594.87",
+      "uid": "830637423",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "35205.14",
+      "uid": "826402446",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "14884.64",
+      "uid": "928440591",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "19942.31",
+      "uid": "503385552",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "37261.51",
+      "uid": "742208548",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "26081.16",
+      "uid": "223192538",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "13260.05",
+      "uid": "751269478",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "23044.04",
+      "uid": "706638802",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "29286.83",
+      "uid": "882002908",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "25241.69",
+      "uid": "961598615",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "38695.7",
+      "uid": "243291860",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "48750.51",
+      "uid": "350390893",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "32342.97",
+      "uid": "243291860",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "34414.15",
+      "uid": "335608675",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "38451.21",
+      "uid": "895326230",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "25063.67",
+      "uid": "256195106",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "28405.87",
+      "uid": "727812598",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "29144.99",
+      "uid": "120252640",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "25117.5",
+      "uid": "326791357",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "24931.32",
+      "uid": "416950251",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "44253.0",
+      "uid": "894530428",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "7370.56",
+      "uid": "517045693",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "43818.79",
+      "uid": "271624922",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "11960.52",
+      "uid": "112088143",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "30237.09",
+      "uid": "727812598",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "34758.04",
+      "uid": "615725704",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "28635.26",
+      "uid": "223192538",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "37192.59",
+      "uid": "223192538",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "33238.16",
+      "uid": "706638802",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "44351.13",
+      "uid": "919881538",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "27482.79",
+      "uid": "861573758",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "9713.45",
+      "uid": "575333854",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "9731.78",
+      "uid": "547998142",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "43471.55",
+      "uid": "336889471",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "42464.26",
+      "uid": "336889471",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "19467.13",
+      "uid": "337184588",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "45530.16",
+      "uid": "909828250",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "27251.54",
+      "uid": "920204498",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "2534.05",
+      "uid": "637846398",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "49280.06",
+      "uid": "861573758",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "11332.54",
+      "uid": "477769871",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "29007.05",
+      "uid": "729042127",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "19742.46",
+      "uid": "715571381",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "16465.5",
+      "uid": "343163876",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "48795.34",
+      "uid": "134285880",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "39738.79",
+      "uid": "245804563",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "40291.39",
+      "uid": "549773821",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "17692.23",
+      "uid": "398949533",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "3971.31",
+      "uid": "125613124",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "7338.52",
+      "uid": "680490194",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "37757.03",
+      "uid": "955779365",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "34249.02",
+      "uid": "190340596",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "49918.76",
+      "uid": "873084261",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "32708.49",
+      "uid": "616147273",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "3000.69",
+      "uid": "715571381",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "30507.19",
+      "uid": "926307417",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "3918.54",
+      "uid": "214472246",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "49986.25",
+      "uid": "451260128",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "32534.06",
+      "uid": "503385552",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "30202.82",
+      "uid": "362745662",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "38091.27",
+      "uid": "241708116",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "46302.89",
+      "uid": "695280930",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "8144.06",
+      "uid": "806422139",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "13559.76",
+      "uid": "125613124",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "36604.32",
+      "uid": "481475699",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "12026.84",
+      "uid": "416950251",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "13718.21",
+      "uid": "199388179",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "46206.57",
+      "uid": "789946018",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "11808.3",
+      "uid": "214472246",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "42839.68",
+      "uid": "612544285",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "37742.96",
+      "uid": "362745662",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "3564.67",
+      "uid": "453332756",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "24276.88",
+      "uid": "340064880",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "21349.77",
+      "uid": "297262323",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "45947.72",
+      "uid": "134285880",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "11109.38",
+      "uid": "646357971",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "34760.49",
+      "uid": "928440591",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "25878.48",
+      "uid": "350390893",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "9065.27",
+      "uid": "199388179",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "19384.36",
+      "uid": "507609472",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "40342.54",
+      "uid": "678043781",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "28799.09",
+      "uid": "190340596",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "15995.15",
+      "uid": "471485013",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "45734.1",
+      "uid": "325798574",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "48894.82",
+      "uid": "272791553",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "22731.41",
+      "uid": "118570201",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "7031.64",
+      "uid": "695280930",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "22710.53",
+      "uid": "906775008",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "7119.37",
+      "uid": "380439369",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "15378.96",
+      "uid": "477769871",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "15336.74",
+      "uid": "557770636",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "33432.54",
+      "uid": "507609472",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "7462.47",
+      "uid": "325798574",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "42789.99",
+      "uid": "955779365",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "36057.02",
+      "uid": "641804409",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "26582.1",
+      "uid": "251996799",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "45110.08",
+      "uid": "727812598",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "37200.42",
+      "uid": "380439369",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "46123.96",
+      "uid": "602757704",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "48442.48",
+      "uid": "460770840",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "40175.0",
+      "uid": "602757704",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "32747.83",
+      "uid": "951279521",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "35154.72",
+      "uid": "743004141",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "30469.54",
+      "uid": "491483517",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "44534.83",
+      "uid": "439514000",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "40673.26",
+      "uid": "680490194",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "46540.11",
+      "uid": "243291860",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "21944.34",
+      "uid": "380439369",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "34132.88",
+      "uid": "178696580",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "3565.35",
+      "uid": "833349712",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "13223.56",
+      "uid": "841618188",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "7596.12",
+      "uid": "343163876",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "29298.2",
+      "uid": "199388179",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "16048.66",
+      "uid": "615725704",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "35112.6",
+      "uid": "615725704",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "42781.78",
+      "uid": "441591886",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "4193.72",
+      "uid": "256195106",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "5227.25",
+      "uid": "435468385",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "31893.81",
+      "uid": "743004141",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "36110.49",
+      "uid": "567991266",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "29144.74",
+      "uid": "951279521",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "44507.37",
+      "uid": "567991266",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "17728.85",
+      "uid": "349951826",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "39083.09",
+      "uid": "961598615",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "21094.99",
+      "uid": "213266269",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "9080.46",
+      "uid": "505328804",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "49077.43",
+      "uid": "606532783",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "46357.84",
+      "uid": "953424007",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "7107.42",
+      "uid": "271624922",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "33642.29",
+      "uid": "637846398",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "11075.33",
+      "uid": "540732084",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "21645.57",
+      "uid": "706638802",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "45635.64",
+      "uid": "641804409",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "8430.0",
+      "uid": "272791553",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "33388.74",
+      "uid": "483002544",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "48051.52",
+      "uid": "961598615",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "1018.09",
+      "uid": "190340596",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "16299.43",
+      "uid": "362745662",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "38868.88",
+      "uid": "253744400",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "31424.7",
+      "uid": "789946018",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "29270.89",
+      "uid": "102567237",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "43343.02",
+      "uid": "297262323",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "18384.93",
+      "uid": "934657316",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "20710.83",
+      "uid": "141481678",
+      "uTime": "1744261543703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "11793.07",
+      "uid": "606532783",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "19419.61",
+      "uid": "951279521",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "49640.56",
+      "uid": "695280930",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "8344.16",
+      "uid": "271624922",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "47781.77",
+      "uid": "855648120",
+      "uTime": "1744261543703",
+      "remark": "main account"
+    },
+    {
+      "balance": "45367.75",
+      "uid": "935570952",
+      "uTime": "1744175143703",
+      "remark": "main account"
+    },
+    {
+      "balance": "3240.42",
+      "uid": "190340596",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "25044.81",
+      "uid": "248745713",
+      "uTime": "1744261543703",
+      "remark": "sub account 1"
+    },
+    {
+      "balance": "14322.32",
+      "uid": "540732084",
+      "uTime": "1744175143703",
+      "remark": "sub account exceed 5"
+    },
+    {
+      "balance": "16558.15",
+      "uid": "669974472",
+      "uTime": "1744175143703",
+      "remark": "sub account 1"
+    }
+  ]
+}
